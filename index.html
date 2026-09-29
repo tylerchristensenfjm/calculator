@@ -73,7 +73,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 
 .control-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.35fr) 44px 44px;
   gap: 8px;
   flex: 0 0 auto;
   padding: 10px 12px 8px;
@@ -100,6 +100,9 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   cursor: default;
   opacity: 0.6;
 }
+
+.icon-button { display: grid; place-items: center; padding: 0; }
+.icon-button svg { width: 20px; height: 20px; }
 
 .mode-toggle-button.measure-active {
   background: var(--accent);
@@ -240,7 +243,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 .conversion-results {
   display: grid;
   min-height: 42px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 8px;
   padding-top: 8px;
@@ -322,6 +325,9 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .memory-tag:active { filter: brightness(0.8); }
@@ -428,6 +434,10 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 .span-3 { grid-column: span 3; }
 
 .toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
   position: fixed;
   left: 50%;
   bottom: max(14px, env(safe-area-inset-bottom));
@@ -445,6 +455,166 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 }
 
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.show.actionable { pointer-events: auto; }
+
+.toast button {
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 900;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  justify-content: center;
+  padding: max(8px, env(safe-area-inset-top)) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.sheet-panel:focus { outline: none; }
+
+.sheet-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 460px);
+  min-height: 0;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 20px 20px 0 0;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sheet-header h2 { flex: 1; margin: 0; font-size: 1.05rem; font-weight: 800; }
+
+.sheet-button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 13%, var(--panel-2));
+  color: var(--accent-strong);
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.sheet-button:disabled {
+  border-color: var(--border);
+  background: var(--panel-2);
+  color: #6f746c;
+  cursor: default;
+  opacity: 0.6;
+}
+
+.sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 14px max(16px, env(safe-area-inset-bottom));
+}
+
+.sheet-hint { margin: 12px 0 0; color: var(--muted); font-size: 0.75rem; line-height: 1.45; }
+
+.history-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+
+.history-item {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-2);
+  color: var(--text);
+  text-align: right;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.history-item:active { filter: brightness(0.88); }
+.history-item span { color: var(--muted); font-size: 0.78rem; font-weight: 650; overflow-wrap: anywhere; }
+.history-item strong { color: var(--accent-strong); font-size: 1.15rem; font-weight: 800; }
+.sheet-empty { margin-top: 28px; color: var(--muted); font-size: 0.9rem; text-align: center; }
+
+.cut-field { display: grid; gap: 6px; margin-bottom: 14px; }
+
+.cut-field label {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cut-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--screen);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px; /* under 16px, iOS zooms the page when the field is focused */
+  font-weight: 700;
+}
+
+.cut-field input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cut-field input::placeholder { color: #5f645c; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.chips button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--accent-strong);
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.chips button:active { filter: brightness(0.86); }
+.chips button:disabled { color: #5f645c; cursor: default; opacity: 0.6; }
+
+.cut-result {
+  margin-top: 4px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--screen);
+}
+
+.cut-main { color: var(--text); font-weight: 700; }
+.cut-main strong { margin-right: 6px; color: var(--accent-strong); font-size: 2rem; font-weight: 800; }
+.cut-details { display: grid; gap: 6px; margin: 10px 0 0; }
+.cut-details div { display: flex; justify-content: space-between; gap: 12px; }
+.cut-details dt { color: var(--muted); font-size: 0.82rem; }
+.cut-details dd { margin: 0; font-weight: 750; text-align: right; }
+.cut-message { margin: 0; color: var(--muted); }
+.cut-message.error { color: #ff8d82; }
 
 .sr-only {
   position: absolute;
@@ -493,7 +663,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 }
 
 @media (max-width: 340px) {
-  .conversion-results { grid-template-columns: 1fr; }
+  .conversion-item strong { font-size: 0.74rem; }
   .fraction-palette { grid-auto-columns: 44px; }
 }
 
@@ -514,6 +684,12 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
       <button type="button" class="control-button unit-button" id="feetButton" aria-label="Enter feet" aria-pressed="false">FT <span>'</span></button>
       <button type="button" class="control-button unit-button" id="inchesButton" aria-label="Enter inches" aria-pressed="false">IN <span>&quot;</span></button>
       <button type="button" class="control-button mode-toggle-button" id="modeToggle" aria-label="Switch to Measure mode" aria-pressed="false">Standard</button>
+      <button type="button" class="control-button icon-button" id="historyButton" aria-label="History" title="History">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+      </button>
+      <button type="button" class="control-button icon-button" id="cutListButton" aria-label="Cut list" title="Cut list">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>
+      </button>
     </div>
 
     <div class="measure-tools" id="measureTools" hidden>
@@ -533,14 +709,9 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
       <button type="button" class="display" id="display" aria-label="Calculator display. Select to copy." title="Select to copy">0</button>
 
       <div class="conversion-results" id="conversionResults" hidden aria-label="Measurement conversions">
-        <button type="button" class="conversion-item" id="conversionPrimaryButton" title="Select to copy">
-          <span id="conversionPrimaryLabel">Total inches</span>
-          <strong id="conversionPrimaryResult">0 in</strong>
-        </button>
-        <button type="button" class="conversion-item" id="conversionSecondaryButton" title="Select to copy">
-          <span id="conversionSecondaryLabel">Decimal feet</span>
-          <strong id="conversionSecondaryResult">0 ft</strong>
-        </button>
+        <button type="button" class="conversion-item" title="Select to copy"><span></span><strong></strong></button>
+        <button type="button" class="conversion-item" title="Select to copy"><span></span><strong></strong></button>
+        <button type="button" class="conversion-item" title="Select to copy"><span></span><strong></strong></button>
       </div>
 
       <div class="sr-only" id="announcer" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -619,7 +790,65 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   </section>
 </div>
 
-<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+<div class="sheet" id="historySheet" hidden role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+  <div class="sheet-panel" tabindex="-1">
+    <div class="sheet-header">
+      <h2 id="historyTitle">History</h2>
+      <button type="button" class="sheet-button" id="historyClear">Clear</button>
+      <button type="button" class="sheet-button" data-close-sheet>Done</button>
+    </div>
+    <div class="sheet-body">
+      <ul class="history-list" id="historyList"></ul>
+      <p class="sheet-hint">Tap a result to use it in your next calculation.</p>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="cutSheet" hidden role="dialog" aria-modal="true" aria-labelledby="cutTitle">
+  <div class="sheet-panel" tabindex="-1">
+    <div class="sheet-header">
+      <h2 id="cutTitle">Cut list</h2>
+      <button type="button" class="sheet-button" data-close-sheet>Done</button>
+    </div>
+    <div class="sheet-body">
+      <div class="cut-field">
+        <label for="cutBoard">Board length</label>
+        <input id="cutBoard" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="8'">
+        <div class="chips" data-for="board">
+          <button type="button" data-fill="8'">8'</button>
+          <button type="button" data-fill="10'">10'</button>
+          <button type="button" data-fill="12'">12'</button>
+          <button type="button" data-fill="16'">16'</button>
+          <button type="button" data-fill-result>Use result</button>
+        </div>
+      </div>
+      <div class="cut-field">
+        <label for="cutPiece">Piece length</label>
+        <input id="cutPiece" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="22 1/2&quot;">
+        <div class="chips" data-for="piece">
+          <button type="button" data-fill-result>Use result</button>
+        </div>
+      </div>
+      <div class="cut-field">
+        <label for="cutKerf">Blade kerf</label>
+        <input id="cutKerf" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="1/8&quot;">
+        <div class="chips" data-for="kerf">
+          <button type="button" data-fill="1/8&quot;">1/8" standard</button>
+          <button type="button" data-fill="3/32&quot;">3/32" thin</button>
+          <button type="button" data-fill="0">None</button>
+        </div>
+      </div>
+      <div class="cut-field">
+        <label for="cutQty">Pieces needed (optional)</label>
+        <input id="cutQty" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+      </div>
+      <div class="cut-result" id="cutResult" aria-live="polite"></div>
+      <p class="sheet-hint">Use ' for feet and " for inches (8', 22 1/2", 7' 3 1/4"), or type ft and in. A plain number counts as inches.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"><span id="toastMessage"></span><button type="button" id="toastAction" hidden></button></div>
 
 <script>
 (() => {
@@ -675,12 +904,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   const $ = id => document.getElementById(id);
   const display = $('display'), displayLabel = $('displayLabel');
   const resultEquation = $('resultEquation'), conversionResults = $('conversionResults');
-  const conversionPrimaryButton = $('conversionPrimaryButton');
-  const conversionPrimaryLabel = $('conversionPrimaryLabel');
-  const conversionPrimaryResult = $('conversionPrimaryResult');
-  const conversionSecondaryButton = $('conversionSecondaryButton');
-  const conversionSecondaryLabel = $('conversionSecondaryLabel');
-  const conversionSecondaryResult = $('conversionSecondaryResult');
+  const conversionItems = [...conversionResults.querySelectorAll('.conversion-item')];
   const announcer = $('announcer'), measureTools = $('measureTools');
   const fractionBrowser = $('fractionBrowser'), fractionPalette = $('fractionPalette');
   const fractionPrev = $('fractionPrev'), fractionNext = $('fractionNext');
@@ -688,27 +912,36 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   const modeToggle = $('modeToggle'), keypadStandard = $('keypadStandard');
   const keypadMeasure = $('keypadMeasure'), toastElement = $('toast');
   const memoryBank = $('memoryBank');
-  
-  let scrapMemory = [];
+  const toastMessage = $('toastMessage'), toastAction = $('toastAction');
+  const historyButton = $('historyButton'), historySheet = $('historySheet');
+  const historyList = $('historyList'), historyClear = $('historyClear');
+  const cutListButton = $('cutListButton'), cutSheet = $('cutSheet'), cutResult = $('cutResult');
+  const cutFields = { board: $('cutBoard'), piece: $('cutPiece'), kerf: $('cutKerf'), qty: $('cutQty') };
+
+  const HISTORY_LIMIT = 50;
+  let scrapMemory = [];   // [{ n, d, dim, label }] - the exact value plus the text shown for it
+  let calcHistory = [];   // same shape plus { equation }, newest first
   let toastTimer;
+  let openSheet = null;
+  let sheetOpener = null;
 
-  // Web Audio Context for haptics
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  const hapticCtx = new AudioContext();
-
+  // Key haptics. Android has navigator.vibrate; iOS Safari does not, but
+  // toggling a native switch control (<input type="checkbox" switch>, iOS 18+)
+  // fires the system haptic tick, so click a hidden one on every key press.
   function vibrate() {
-    if (hapticCtx.state === 'suspended') hapticCtx.resume();
-    const osc = hapticCtx.createOscillator();
-    const gainNode = hapticCtx.createGain();
-    osc.connect(gainNode);
-    gainNode.connect(hapticCtx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(120, hapticCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(0.01, hapticCtx.currentTime + 0.04);
-    gainNode.gain.setValueAtTime(0.8, hapticCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, hapticCtx.currentTime + 0.04);
-    osc.start(hapticCtx.currentTime);
-    osc.stop(hapticCtx.currentTime + 0.04);
+    try {
+      if (navigator.vibrate) { navigator.vibrate(10); return; }
+      const label = document.createElement('label');
+      label.ariaHidden = 'true';
+      label.style.display = 'none';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.setAttribute('switch', '');
+      label.appendChild(input);
+      document.head.appendChild(label);
+      label.click();
+      label.remove();
+    } catch (error) { /* no haptics on this device */ }
   }
 
   function normalizeOperators(text) {
@@ -737,13 +970,18 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   }
 
   const NUMERIC_LITERAL = String.raw`(?:\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d*)?|\.\d+)`;
-  const FEET_LITERAL_RE = new RegExp(`^(${NUMERIC_LITERAL})\s*'(?:\s*(${NUMERIC_LITERAL})\s*")?`);
-  const INCH_LITERAL_RE = new RegExp(`^(${NUMERIC_LITERAL})\s*"`);
-  const PLAIN_LITERAL_RE = new RegExp(`^(${NUMERIC_LITERAL})`);
-  const INTERNAL_QUANTITY_RE = /^\[\[Q:(-?\d+)\/(\d+):(-?\d+)\]\]/;
+  const FEET_LITERAL_RE = new RegExp(String.raw`^(${NUMERIC_LITERAL})\s*'(?:\s*(${NUMERIC_LITERAL})\s*")?`);
+  const INCH_LITERAL_RE = new RegExp(String.raw`^(${NUMERIC_LITERAL})\s*"`);
+  const PLAIN_LITERAL_RE = new RegExp(String.raw`^(${NUMERIC_LITERAL})`);
+  // An exact value spliced into the expression. A calculated result has no
+  // label and only ever starts the expression; a recalled scrap or history
+  // value carries the text shown for it, so backspace can remove it whole.
+  const INTERNAL_QUANTITY_RE = /^\[\[Q:(-?\d+)\/(\d+):(-?\d+)(?::([^\]]*))?\]\]/;
+  const TRAILING_LABELED_QUANTITY_RE = /\[\[Q:-?\d+\/\d+:-?\d+:([^\]]*)\]\]$/;
+  const UNLABELED_QUANTITY_RE = /\[\[Q:-?\d+\/\d+:-?\d+\]\]/;
 
-  function encodeQuantity(fraction, dimension) {
-    return `[[Q:${fraction.n}/${fraction.d}:${dimension}]]`;
+  function encodeQuantity(fraction, dimension, label = '') {
+    return `[[Q:${fraction.n}/${fraction.d}:${dimension}${label ? `:${encodeURIComponent(label)}` : ''}]]`;
   }
 
   function tokenize(rawExpression) {
@@ -997,9 +1235,37 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     return `${formatWithCommas(formatDecimalMeasurement(squareFeet))} sq ft`;
   }
 
+  function formatVolumeCubicInches(fraction) { return `${formatDecimalMeasurement(fraction)} cu in`; }
+  function formatVolumeCubicFeet(fraction) { return `${formatDecimalMeasurement(fraction.div(new Fraction(1728n)))} cu ft`; }
+
+  // 1 in = 25.4 mm exactly, so the metric figures are exact until display rounding.
+  const MM_PER_INCH = new Fraction(127n, 5n);
+  const CM2_PER_SQ_IN = MM_PER_INCH.mul(MM_PER_INCH).div(new Fraction(100n));
+  const LITERS_PER_CU_IN = MM_PER_INCH.mul(MM_PER_INCH).mul(MM_PER_INCH).div(new Fraction(1000000n));
+
+  function formatMetric(fraction, dimension) {
+    if (dimension === 1) {
+      const mm = fraction.mul(MM_PER_INCH);
+      return Math.abs(mm.toNumber()) < 1000
+        ? `${formatDecimalMeasurement(mm, 1)} mm`
+        : `${formatDecimalMeasurement(mm.div(new Fraction(1000n)), 3)} m`;
+    }
+    if (dimension === 2) {
+      const cm2 = fraction.mul(CM2_PER_SQ_IN);
+      return Math.abs(cm2.toNumber()) < 10000
+        ? `${formatDecimalMeasurement(cm2, 1)} cm²`
+        : `${formatDecimalMeasurement(cm2.div(new Fraction(10000n)), 2)} m²`;
+    }
+    const liters = fraction.mul(LITERS_PER_CU_IN);
+    return Math.abs(liters.toNumber()) < 1000
+      ? `${formatDecimalMeasurement(liters, 1)} L`
+      : `${formatDecimalMeasurement(liters.div(new Fraction(1000n)), 3)} m³`;
+  }
+
   function formatResult(fraction, mode = state.mode, dimension = state.currentDimension) {
     if (mode === 'standard' || dimension === 0) return formatWithCommas(formatDecimal(fraction));
     if (dimension === 2) return state.resultAsFeet ? formatAreaSquareFeet(fraction) : formatAreaSquareInches(fraction);
+    if (dimension === 3) return state.resultAsFeet ? formatVolumeCubicFeet(fraction) : formatVolumeCubicInches(fraction);
     if (dimension !== 1) return `${formatWithCommas(formatDecimal(fraction))} in^${dimension}`;
     return state.resultAsFeet ? formatFeetInches(fraction, state.precision) : `${formatMixedNumber(fraction, state.precision)}"`;
   }
@@ -1013,37 +1279,35 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 
   function hideConversions() {
     conversionResults.hidden = true;
-    conversionPrimaryResult.textContent = '';
-    conversionSecondaryResult.textContent = '';
+    conversionItems.forEach(item => { item.querySelector('strong').textContent = ''; });
   }
 
   function renderConversions(fraction) {
-    if (state.mode !== 'measure' || state.currentDimension === 0) { hideConversions(); return; }
-    if (state.currentDimension === 2) {
-      const squareInches = formatWithCommas(formatDecimalMeasurement(fraction));
-      const squareFeet = formatWithCommas(formatDecimalMeasurement(fraction.div(new Fraction(144n))));
-      if (state.resultAsFeet) {
-        conversionPrimaryLabel.textContent = 'Total square inches'; conversionPrimaryResult.textContent = `${squareInches} sq in`;
-        conversionSecondaryLabel.textContent = 'Decimal square feet'; conversionSecondaryResult.textContent = `${squareFeet} sq ft`;
-      } else {
-        conversionPrimaryLabel.textContent = 'Total square feet'; conversionPrimaryResult.textContent = `${squareFeet} sq ft`;
-        conversionSecondaryLabel.textContent = 'Decimal square inches'; conversionSecondaryResult.textContent = `${squareInches} sq in`;
-      }
-      conversionResults.hidden = false;
-      return;
-    }
-    if (state.currentDimension !== 1) { hideConversions(); return; }
-    if (state.resultAsFeet) {
-      const totalInches = formatMixedNumber(fraction, state.precision);
-      const decimalFeet = formatDecimalMeasurement(fraction.div(new Fraction(12n)));
-      conversionPrimaryLabel.textContent = 'Total inches'; conversionPrimaryResult.textContent = `${totalInches} in`;
-      conversionSecondaryLabel.textContent = 'Decimal feet'; conversionSecondaryResult.textContent = `${decimalFeet} ft`;
+    const dimension = state.currentDimension;
+    if (state.mode !== 'measure' || dimension < 1 || dimension > 3) { hideConversions(); return; }
+    const decimal = formatDecimalMeasurement;
+    let rows;
+    if (dimension === 1) {
+      rows = state.resultAsFeet
+        ? [['Inches', `${formatMixedNumber(fraction, state.precision)} in`], ['Decimal ft', `${decimal(fraction.div(new Fraction(12n)))} ft`]]
+        : [['Feet', formatFeetInches(fraction, state.precision)], ['Decimal in', `${decimal(fraction)} in`]];
+    } else if (dimension === 2) {
+      rows = [
+        state.resultAsFeet ? ['Sq in', `${decimal(fraction, 2)} sq in`] : ['Sq ft', `${decimal(fraction.div(new Fraction(144n)), 2)} sq ft`],
+        ['Sq yd', `${decimal(fraction.div(new Fraction(1296n)), 2)} sq yd`]
+      ];
     } else {
-      const totalFeet = formatFeetInches(fraction, state.precision);
-      const decimalInches = formatDecimalMeasurement(fraction);
-      conversionPrimaryLabel.textContent = 'Total feet'; conversionPrimaryResult.textContent = totalFeet;
-      conversionSecondaryLabel.textContent = 'Decimal inches'; conversionSecondaryResult.textContent = `${decimalInches} in`;
+      // Board feet = thickness x width x length in inches / 144, on nominal sizes.
+      rows = [
+        ['Board ft', `${decimal(fraction.div(new Fraction(144n)), 2)} bd ft`],
+        ['Cu yd', `${decimal(fraction.div(new Fraction(46656n)), 2)} cu yd`]
+      ];
     }
+    rows.push(['Metric', formatMetric(fraction, dimension)]);
+    rows.forEach(([label, value], index) => {
+      conversionItems[index].querySelector('span').textContent = label;
+      conversionItems[index].querySelector('strong').textContent = value;
+    });
     conversionResults.hidden = false;
   }
 
@@ -1094,12 +1358,12 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   function renderControlRow() {
     const isMeasure = state.mode === 'measure';
     const hasConvertibleResult = isMeasure && state.justCalculated && state.currentResult && state.currentDimension > 0;
-    const isArea = hasConvertibleResult && state.currentDimension === 2;
+    const power = hasConvertibleResult ? ({ 2: '²', 3: '³' })[state.currentDimension] || '' : '';
     modeToggle.textContent = isMeasure ? 'Measure' : 'Standard';
     modeToggle.classList.toggle('measure-active', isMeasure);
     modeToggle.setAttribute('aria-pressed', String(isMeasure));
-    feetButton.innerHTML = isArea ? 'FT²' : `FT <span>'</span>`;
-    inchesButton.innerHTML = isArea ? 'IN²' : `IN <span>&quot;</span>`;
+    feetButton.innerHTML = power ? `FT${power}` : `FT <span>'</span>`;
+    inchesButton.innerHTML = power ? `IN${power}` : `IN <span>&quot;</span>`;
     const unitUnavailable = !isMeasure || (state.justCalculated && state.currentResult && state.currentDimension === 0);
     feetButton.disabled = unitUnavailable;
     inchesButton.disabled = unitUnavailable;
@@ -1174,21 +1438,53 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     requestAnimationFrame(() => { announcer.textContent = message; });
   }
 
-  function showToast(message) {
-    toastElement.textContent = message;
+  // action: optional { label, run } - shows a button (e.g. Undo) and keeps the toast up longer.
+  function showToast(message, action = null) {
+    toastMessage.textContent = message;
+    toastAction.hidden = !action;
+    toastAction.textContent = action ? action.label : '';
+    toastAction.onclick = action ? () => { action.run(); hideToast(); } : null;
+    toastElement.classList.toggle('actionable', Boolean(action));
     toastElement.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toastElement.classList.remove('show'), 1500);
+    toastTimer = setTimeout(hideToast, action ? 4000 : 1500);
+  }
+
+  function hideToast() {
+    clearTimeout(toastTimer);
+    toastElement.classList.remove('show', 'actionable');
+    toastAction.onclick = null;
   }
 
   function escapeHTMLForTag(str) {
     return String(str).replace(/[&<>"']/g, c => ({'&': '&amp;','<': '&lt;','>': '&gt;','"': '&quot;',"'": '&#39;'}[c]));
   }
 
+  function storedQuantity(fraction, dimension, label) {
+    return { n: fraction.n.toString(), d: fraction.d.toString(), dim: dimension, label };
+  }
+
+  function isStoredQuantity(item) {
+    return Boolean(item) && /^-?\d+$/.test(String(item.n)) && /^[1-9]\d*$/.test(String(item.d))
+      && Number.isInteger(item.dim) && item.dim >= 0 && item.dim <= 3 && typeof item.label === 'string';
+  }
+
+  // Scraps saved by earlier versions are the display text ("1,250", "1.25 sq ft", 5' 3").
+  function scrapFromLegacyText(text) {
+    try {
+      const label = String(text).trim();
+      const plain = label.replace(/,/g, '');
+      const area = plain.match(/^(.*?)\s*sq (in|ft)$/);
+      const quantity = evaluateNodeQuantity(buildTree(area ? area[1] : plain), 0);
+      if (area) return storedQuantity(quantity.value.mul(new Fraction(area[2] === 'ft' ? 144n : 1n)), 2, label);
+      return storedQuantity(quantity.value, quantity.dimension, label);
+    } catch (error) { return null; }
+  }
+
   function updateMemoryDisplay() {
     memoryBank.innerHTML = scrapMemory.map((scrap, index) => `
-      <button type="button" class="memory-tag" data-memory-index="${index}">
-        ${escapeHTMLForTag(scrap)}
+      <button type="button" class="memory-tag" data-memory-index="${index}" title="Tap to use, hold to delete">
+        ${escapeHTMLForTag(scrap.label)}
       </button>
     `).join('');
   }
@@ -1196,11 +1492,10 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   function addMemory() {
     vibrate();
     if (state.justCalculated && state.currentResult) {
-      const currentDisplay = display.textContent;
-      scrapMemory.push(currentDisplay);
+      scrapMemory.push(storedQuantity(state.currentResult, state.currentDimension, display.textContent));
       updateMemoryDisplay();
       saveState();
-      showToast('Scrap saved');
+      showToast(scrapMemory.length === 1 ? 'Scrap saved. Hold a scrap to delete it' : 'Scrap saved');
     } else {
       showToast('Calculate a result first');
     }
@@ -1208,25 +1503,42 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 
   function clearMemory() {
     vibrate();
+    if (!scrapMemory.length) { showToast('No scraps saved'); return; }
+    const cleared = scrapMemory;
     scrapMemory = [];
     updateMemoryDisplay();
     saveState();
-    showToast('Scrap memory cleared');
+    showToast('Scraps cleared', { label: 'Undo', run: () => {
+      scrapMemory = [...cleared, ...scrapMemory];
+      updateMemoryDisplay(); saveState();
+    } });
+  }
+
+  function removeScrap(index) {
+    const [removed] = scrapMemory.splice(index, 1);
+    if (!removed) return;
+    vibrate();
+    updateMemoryDisplay();
+    saveState();
+    showToast(`Deleted ${removed.label}`, { label: 'Undo', run: () => {
+      scrapMemory.splice(Math.min(index, scrapMemory.length), 0, removed);
+      updateMemoryDisplay(); saveState();
+    } });
   }
 
   function useMemory(index) {
-    vibrate();
-    const scrapText = scrapMemory[index];
-    prepareForFreshValue();
-    if (/\d$/.test(state.input) && !state.input.trim().endsWith("'") && !state.input.trim().endsWith('"')) {
-       state.input += ` ${scrapText}`;
-       state.evalInput += ` ${scrapText}`;
-    } else {
-       state.input += scrapText;
-       state.evalInput += scrapText;
-    }
-    renderDisplay();
-    saveState();
+    if (scrapMemory[index]) insertQuantity(scrapMemory[index]);
+  }
+
+  // Put a saved value (scrap or history entry) into the expression: its label
+  // on screen, its exact value in the text that gets evaluated.
+  function insertQuantity(item) {
+    vibrate(); prepareForFreshValue();
+    const token = encodeQuantity(new Fraction(BigInt(item.n), BigInt(item.d)), item.dim, item.label);
+    const gap = /[\d.'")%]$/.test(state.input) ? ' ' : '';
+    state.input += gap + item.label;
+    state.evalInput += gap + token;
+    renderDisplay(); renderPendingOperator(); saveState();
   }
 
   function saveState() {
@@ -1235,7 +1547,10 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
         numerator: state.currentResult.n.toString(), denominator: state.currentResult.d.toString(),
         dimension: state.currentDimension, resultAsFeet: state.resultAsFeet, equation: state.lastEquation
       } : null;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ mode: state.mode, precision: state.precision, lastCalculation, scrapMemory }));
+      const cutList = Object.fromEntries(Object.entries(cutFields).map(([key, input]) => [key, input.value]));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        mode: state.mode, precision: state.precision, lastCalculation, scrapMemory, history: calcHistory, cutList
+      }));
     } catch (error) { console.warn('Calculator state could not be saved.', error); }
   }
 
@@ -1247,13 +1562,25 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
       state.mode = parsed.mode === 'measure' ? 'measure' : 'standard';
       state.precision = [8, 16, 32].includes(parsed.precision) ? parsed.precision : 16;
       if (Array.isArray(parsed.scrapMemory)) {
-        scrapMemory = parsed.scrapMemory;
+        scrapMemory = parsed.scrapMemory
+          .map(scrap => typeof scrap === 'string' ? scrapFromLegacyText(scrap) : scrap)
+          .filter(isStoredQuantity);
         updateMemoryDisplay();
+      }
+      if (Array.isArray(parsed.history)) {
+        calcHistory = parsed.history
+          .filter(entry => isStoredQuantity(entry) && typeof entry.equation === 'string')
+          .slice(0, HISTORY_LIMIT);
+      }
+      if (parsed.cutList && typeof parsed.cutList === 'object') {
+        for (const [key, input] of Object.entries(cutFields)) {
+          if (typeof parsed.cutList[key] === 'string') input.value = parsed.cutList[key];
+        }
       }
       const last = parsed.lastCalculation;
       if (last && /^-?\d+$/.test(String(last.numerator)) && /^\d+$/.test(String(last.denominator))) {
         const dimension = Number(last.dimension);
-        if (Number.isInteger(dimension) && dimension >= 0 && dimension <= 2) {
+        if (Number.isInteger(dimension) && dimension >= 0 && dimension <= 3) {
           state.currentResult = new Fraction(BigInt(last.numerator), BigInt(last.denominator));
           state.currentDimension = dimension; state.resultAsFeet = Boolean(last.resultAsFeet);
           state.lastEquation = String(last.equation || ''); state.justCalculated = true;
@@ -1343,7 +1670,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 
   function addFractionSlash() {
     vibrate(); clearError();
-    if (/\d$/.test(state.input) && !/\/\d*$/.test(state.input)) {
+    if (/\d$/.test(state.input) && /\d$/.test(state.evalInput) && !/\/\d*$/.test(state.input)) {
       state.input += '/'; state.evalInput += '/'; state.justCalculated = false;
       renderDisplay(); saveState();
     }
@@ -1361,7 +1688,8 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
       saveState(); return;
     }
     const trimmed = state.input.trim();
-    if (!/\d$/.test(trimmed)) return;
+    // A recalled value already has its unit, so only a typed number takes one.
+    if (!/\d$/.test(trimmed) || !/\d$/.test(state.evalInput.trim())) return;
     const mark = unit === 'feet' ? "' " : '"';
     state.input += mark; state.evalInput += mark;
     state.justCalculated = false; renderDisplay(); renderControlRow(); saveState();
@@ -1377,7 +1705,19 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
       if (internalQuantity && !internalRemainder) {
         state.input = ''; state.evalInput = ''; state.currentResult = null; state.currentDimension = 0;
       } else {
-        state.input = state.input.trimEnd().slice(0, -1).trimEnd(); state.evalInput = state.evalInput.trimEnd().slice(0, -1).trimEnd();
+        const recalled = state.evalInput.trimEnd().match(TRAILING_LABELED_QUANTITY_RE);
+        const shown = state.input.trimEnd();
+        if (recalled) {
+          const label = decodeURIComponent(recalled[1]);
+          if (shown.endsWith(label)) {
+            state.input = shown.slice(0, -label.length).trimEnd();
+            state.evalInput = state.evalInput.trimEnd().slice(0, -recalled[0].length).trimEnd();
+          } else {
+            state.input = ''; state.evalInput = '';
+          }
+        } else {
+          state.input = shown.slice(0, -1).trimEnd(); state.evalInput = state.evalInput.trimEnd().slice(0, -1).trimEnd();
+        }
       }
     }
     renderDisplay(); renderPendingOperator(); renderControlRow(); saveState();
@@ -1453,7 +1793,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   function calculate() {
     vibrate(); clearError();
     try {
-      let expression; let result;
+      let expression; let result; let record = true;
       if (state.mode === 'standard' && state.justCalculated && state.currentResult && state.repeatOperation) {
         expression = `${formatResult(state.currentResult)} ${formatOperator(state.repeatOperation.operator)} ${state.repeatOperation.label}`;
         const repeated = evaluateBinaryQuantityFromLeft(makeQuantity(state.currentResult, state.currentDimension), state.repeatOperation.operator, state.repeatOperation.rightNode, 0);
@@ -1461,12 +1801,14 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
       } else {
         expression = state.input.trim(); const evaluationExpression = state.evalInput.trim();
         if (!expression || !evaluationExpression) return;
+        // Pressing = again on a lone result or recalled value computes nothing new.
+        record = !/^-?\[\[Q:[^\]]*\]\]$/.test(evaluationExpression);
         const tree = buildTree(evaluationExpression);
         const evaluated = evaluateNodeQuantity(tree, state.mode === 'measure' ? 1 : 0);
         result = evaluated.value; state.currentDimension = evaluated.dimension;
         if (state.currentDimension < 0) throw new Error('This calculation creates an inverse measurement');
-        if (state.currentDimension > 2) throw new Error('This calculator currently supports length and area');
-        if (state.mode === 'measure' && !evaluationExpression.includes('[[Q:')) state.resultAsFeet = expression.includes("'");
+        if (state.currentDimension > 3) throw new Error('This calculator supports length, area and volume');
+        if (state.mode === 'measure' && !UNLABELED_QUANTITY_RE.test(evaluationExpression)) state.resultAsFeet = expression.includes("'");
         state.repeatOperation = state.mode === 'standard' && tree.type === 'binary' ? { operator: tree.operator, rightNode: tree.right, label: nodeToDisplay(tree.right) } : null;
       }
       state.lastEquation = expression; state.currentResult = result;
@@ -1474,11 +1816,126 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
       state.evalInput = encodeQuantity(result, state.currentDimension);
       state.justCalculated = true; state.displayError = false;
       const formatted = renderCalculatedResult(result);
+      if (record) addHistoryEntry(expression, formatted, result);
       renderPendingOperator(); saveState();
     } catch (error) {
       state.lastEquation = ''; state.displayError = true;
       setDisplay(error.message || 'Unable to calculate', 'error', 'Check the calculation');
     }
+  }
+
+  function addHistoryEntry(equation, label, result) {
+    calcHistory.unshift({ equation, ...storedQuantity(result, state.currentDimension, label) });
+    calcHistory.length = Math.min(calcHistory.length, HISTORY_LIMIT);
+  }
+
+  function renderHistory() {
+    historyClear.disabled = !calcHistory.length;
+    historyList.innerHTML = calcHistory.length
+      ? calcHistory.map((entry, index) => `
+          <li><button type="button" class="history-item" data-history-index="${index}">
+            <span>${escapeHTMLForTag(entry.equation)} =</span>
+            <strong>${escapeHTMLForTag(entry.label)}</strong>
+          </button></li>`).join('')
+      : '<li class="sheet-empty">No calculations yet. Results appear here after you press =.</li>';
+  }
+
+  function clearHistory() {
+    if (!calcHistory.length) return;
+    const cleared = calcHistory;
+    calcHistory = [];
+    renderHistory(); saveState();
+    showToast('History cleared', { label: 'Undo', run: () => {
+      calcHistory = [...calcHistory, ...cleared].slice(0, HISTORY_LIMIT);
+      renderHistory(); saveState();
+    } });
+  }
+
+  function showSheet(sheet, opener) {
+    closeSheet();
+    sheet.hidden = false; openSheet = sheet; sheetOpener = opener;
+    sheet.querySelector('.sheet-panel').focus({ preventScroll: true });
+  }
+
+  function closeSheet() {
+    if (!openSheet) return;
+    openSheet.hidden = true; openSheet = null;
+    sheetOpener?.focus(); sheetOpener = null;
+  }
+
+  // iOS turns ' and " into curly quotes as you type; also accept "ft" / "in",
+  // and read a bare number after feet (7' 3) as inches.
+  function normalizeLengthText(text) {
+    return String(text)
+      .replace(/[‘’′]/g, "'").replace(/[“”″]/g, '"')
+      .replace(/(\d)\s*(?:feet|foot|ft)\b\.?/gi, "$1'")
+      .replace(/(\d)\s*(?:inches|inch|in)\b\.?/gi, '$1"')
+      .replace(/'\s*(\d+(?:\.\d+)?(?:\s+\d+\/\d+)?|\d+\/\d+)\s*$/, `' $1"`)
+      .trim();
+  }
+
+  function parseLengthField(text, name, allowZero = false) {
+    const cleaned = normalizeLengthText(text);
+    if (!cleaned) return null;
+    let quantity;
+    try { quantity = evaluateNodeQuantity(buildTree(cleaned), 1); }
+    catch (error) { throw new Error(`${name}: ${error.message}`); }
+    if (quantity.dimension !== 1) throw new Error(`${name} must be a length`);
+    if (quantity.value.n < 0n || (!allowZero && quantity.value.n === 0n)) throw new Error(`${name} must be more than zero`);
+    return quantity.value;
+  }
+
+  function hasLengthResult() {
+    return Boolean(state.justCalculated && state.currentResult && state.currentDimension === 1);
+  }
+
+  function showCutMessage(message, isError = false) {
+    cutResult.innerHTML = `<p class="cut-message${isError ? ' error' : ''}">${escapeHTMLForTag(message)}</p>`;
+  }
+
+  // Each piece costs its length plus one saw kerf; the last piece needs no cut
+  // when it ends exactly at the end of the board.
+  function renderCutList() {
+    let board; let piece; let kerf; let needed = null;
+    try {
+      board = parseLengthField(cutFields.board.value, 'Board length');
+      piece = parseLengthField(cutFields.piece.value, 'Piece length');
+      kerf = parseLengthField(cutFields.kerf.value, 'Blade kerf', true) || new Fraction(0n);
+      const quantityText = cutFields.qty.value.trim();
+      if (quantityText) {
+        if (!/^\d+$/.test(quantityText) || BigInt(quantityText) === 0n) throw new Error('Pieces needed must be a whole number');
+        needed = BigInt(quantityText);
+      }
+    } catch (error) { showCutMessage(error.message, true); return; }
+    if (!board || !piece) { showCutMessage('Enter a board length and a piece length.'); return; }
+
+    const perCut = piece.add(kerf);
+    const fit = board.add(kerf).div(perCut);
+    const perBoard = fit.n / fit.d;
+    if (perBoard === 0n) { showCutMessage('The piece is longer than the board.', true); return; }
+    const offcutAfter = pieces => {
+      const left = board.sub(perCut.mul(new Fraction(pieces)));
+      return left.n < 0n ? new Fraction(0n) : left;
+    };
+    const lengthText = value => value.n === 0n ? 'None' : formatFeetInches(value, state.precision);
+    const plural = count => `${count} ${count === 1n ? 'piece' : 'pieces'}`;
+
+    const rows = [['Offcut per board', lengthText(offcutAfter(perBoard))]];
+    if (needed) {
+      const boards = (needed + perBoard - 1n) / perBoard;
+      const lastPieces = needed - (boards - 1n) * perBoard;
+      rows.push(['Boards needed', boards.toString()]);
+      if (lastPieces !== perBoard) rows.push(['Last board', `${plural(lastPieces)}, ${lengthText(offcutAfter(lastPieces))} left`]);
+    }
+    cutResult.innerHTML = `
+      <div class="cut-main"><strong>${perBoard}</strong>${perBoard === 1n ? 'piece' : 'pieces'} per board</div>
+      <dl class="cut-details">${rows.map(([term, value]) => `<div><dt>${term}</dt><dd>${escapeHTMLForTag(value)}</dd></div>`).join('')}</dl>`;
+  }
+
+  function openCutList() {
+    cutSheet.querySelectorAll('[data-fill-result]').forEach(button => { button.disabled = !hasLengthResult(); });
+    renderCutList();
+    showSheet(cutSheet, cutListButton);
   }
 
   async function copyText(text, successMessage = 'Copied') {
@@ -1524,13 +1981,15 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   }
 
   function handleKeyboard(event) {
+    // Typing in the cut list must not also type into the calculator.
+    if (openSheet) { if (event.key === 'Escape') closeSheet(); return; }
     if (event.target.closest?.('button') && (event.key === 'Enter' || event.key === ' ')) return;
     if (/^[0-9]$/.test(event.key)) addValue(event.key);
     else if (event.key === '.') addValue('.');
     else if (['+', '-', '*'].includes(event.key)) addOperator(event.key);
     else if (event.key === '/') {
       event.preventDefault();
-      if (state.mode === 'measure' && /\d$/.test(state.input) && !/\/\d*$/.test(state.input)) addFractionSlash();
+      if (state.mode === 'measure' && /\d$/.test(state.input) && /\d$/.test(state.evalInput) && !/\/\d*$/.test(state.input)) addFractionSlash();
       else addOperator('/');
     } else if (event.key === '%') addPercent();
     else if (event.key === '(' || event.key === ')') addParenthesis(event.key);
@@ -1544,13 +2003,62 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     if (event.target.closest('.keypad, #fractionPalette')) handleKeypadClick(event);
   });
   
+  // Hold a scrap to delete it; a tap still recalls it. Moving the finger
+  // (scrolling the scrap row) cancels the hold.
+  const LONG_PRESS_MS = 550;
+  let pressTimer = null; let pressOrigin = null; let suppressScrapClick = false;
+  const cancelPress = () => { clearTimeout(pressTimer); pressTimer = null; };
+  memoryBank.addEventListener('pointerdown', event => {
+    suppressScrapClick = false;
+    const tag = event.target.closest('.memory-tag');
+    if (!tag) return;
+    cancelPress();
+    pressOrigin = { x: event.clientX, y: event.clientY };
+    pressTimer = setTimeout(() => {
+      pressTimer = null; suppressScrapClick = true;
+      removeScrap(Number(tag.dataset.memoryIndex));
+    }, LONG_PRESS_MS);
+  });
+  memoryBank.addEventListener('pointermove', event => {
+    if (pressTimer && Math.hypot(event.clientX - pressOrigin.x, event.clientY - pressOrigin.y) > 10) cancelPress();
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => memoryBank.addEventListener(type, cancelPress));
+  memoryBank.addEventListener('contextmenu', event => { if (event.target.closest('.memory-tag')) event.preventDefault(); });
+
   $('memoryTools').addEventListener('click', event => {
     const button = event.target.closest('button');
     if (!button) return;
     if (button.dataset.action === 'memory-add') addMemory();
     else if (button.dataset.action === 'memory-clear') clearMemory();
-    else if (button.dataset.memoryIndex !== undefined) useMemory(Number(button.dataset.memoryIndex));
+    else if (button.dataset.memoryIndex !== undefined) {
+      if (suppressScrapClick) { suppressScrapClick = false; return; }
+      useMemory(Number(button.dataset.memoryIndex));
+    }
   });
+
+  historyButton.addEventListener('click', () => { renderHistory(); showSheet(historySheet, historyButton); });
+  historyClear.addEventListener('click', clearHistory);
+  historyList.addEventListener('click', event => {
+    const item = event.target.closest('[data-history-index]');
+    if (!item) return;
+    const entry = calcHistory[Number(item.dataset.historyIndex)];
+    closeSheet();
+    if (entry) insertQuantity(entry);
+  });
+
+  cutListButton.addEventListener('click', openCutList);
+  cutSheet.addEventListener('click', event => {
+    const chip = event.target.closest('.chips button');
+    if (!chip) return;
+    const field = cutFields[chip.parentElement.dataset.for];
+    field.value = chip.dataset.fill ?? (hasLengthResult() ? reusableResultText(state.currentResult) : '');
+    renderCutList(); saveState();
+  });
+  Object.values(cutFields).forEach(input => input.addEventListener('input', () => { renderCutList(); saveState(); }));
+
+  document.querySelectorAll('.sheet').forEach(sheet => sheet.addEventListener('click', event => {
+    if (event.target === sheet || event.target.closest('[data-close-sheet]')) closeSheet();
+  }));
 
   modeToggle.addEventListener('click', () => switchMode(state.mode === 'standard' ? 'measure' : 'standard'));
   feetButton.addEventListener('click', () => useUnit('feet'));
@@ -1574,8 +2082,10 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   fractionPalette.addEventListener('scroll', updateFractionNavigation, { passive: true });
   window.addEventListener('resize', updateFractionNavigation);
   display.addEventListener('click', () => copyText(display.textContent, 'Display copied'));
-  conversionPrimaryButton.addEventListener('click', () => { if (conversionPrimaryResult.textContent) copyText(conversionPrimaryResult.textContent, 'Conversion copied'); });
-  conversionSecondaryButton.addEventListener('click', () => { if (conversionSecondaryResult.textContent) copyText(conversionSecondaryResult.textContent, 'Conversion copied'); });
+  conversionResults.addEventListener('click', event => {
+    const value = event.target.closest('.conversion-item')?.querySelector('strong').textContent;
+    if (value) copyText(value, 'Conversion copied');
+  });
   document.addEventListener('keydown', handleKeyboard);
 
   loadState();
