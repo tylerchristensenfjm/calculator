@@ -73,7 +73,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 
 .control-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.35fr) 44px 44px;
+  grid-template-columns: minmax(0, 1fr) 44px 44px;
   gap: 8px;
   flex: 0 0 auto;
   padding: 10px 12px 8px;
@@ -104,15 +104,42 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 .icon-button { display: grid; place-items: center; padding: 0; }
 .icon-button svg { width: 20px; height: 20px; }
 
-.mode-toggle-button.measure-active {
-  background: var(--accent);
-  color: #17150f;
+.mode-switch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  min-height: 44px;
+  padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 13%, var(--panel-2));
 }
 
-.unit-button.active {
-  background: var(--accent);
-  color: #17150f;
+.mode-switch button {
+  min-width: 0;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--accent-strong);
+  font-weight: 850;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  touch-action: manipulation;
 }
+
+.mode-switch button.active { background: var(--accent); color: #17150f; }
+
+/* FT and IN sit on the keypad beside =, styled like the fraction-slash key. */
+.key.unit-button {
+  background: color-mix(in srgb, var(--accent) 22%, var(--utility));
+  color: var(--accent-strong);
+  font-size: clamp(0.95rem, 4vw, 1.1rem);
+}
+
+.key.unit-button > span { margin-left: 2px; opacity: 0.8; }
+.key.unit-button.active { background: var(--accent); color: #17150f; }
+.key:disabled { opacity: 0.45; cursor: default; }
 
 .measure-tools {
   flex: 0 0 auto;
@@ -239,6 +266,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 }
 
 .display.error { color: #ff8d82; font-size: 1.05rem; }
+.display.answer { font-size: clamp(1.35rem, 6.4vw, 2.1rem); }
 
 .conversion-results {
   display: grid;
@@ -431,7 +459,57 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 .key.measure-key { background: color-mix(in srgb, var(--accent) 22%, var(--utility)); color: var(--accent-strong); }
 .key.equals { background: var(--accent); color: #17150f; font-size: clamp(1.3rem, 5.3vw, 1.55rem); }
 .key.pending { box-shadow: inset 0 0 0 3px var(--accent-strong); }
-.span-3 { grid-column: span 3; }
+
+.ask-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 10px 10px max(10px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  background: var(--panel-2);
+}
+
+.ask-form { display: grid; grid-template-columns: minmax(0, 1fr) 72px; gap: 8px; }
+
+.ask-form input {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--screen);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px; /* under 16px, iOS zooms the page when the field is focused */
+  font-weight: 700;
+}
+
+.ask-form input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ask-form input::placeholder { color: #5f645c; font-weight: 600; }
+
+.ask-form button {
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #17150f;
+  font-size: 1.05rem;
+  font-weight: 850;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.ask-form button:active { filter: brightness(0.9); }
+
+.ask-examples-title {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 
 .toast {
   display: flex;
@@ -681,9 +759,11 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 <div class="calculator-app" id="calculatorApp">
   <section class="calculator-card" aria-label="Calculator">
     <div class="control-row" id="controlRow">
-      <button type="button" class="control-button unit-button" id="feetButton" aria-label="Enter feet" aria-pressed="false">FT <span>'</span></button>
-      <button type="button" class="control-button unit-button" id="inchesButton" aria-label="Enter inches" aria-pressed="false">IN <span>&quot;</span></button>
-      <button type="button" class="control-button mode-toggle-button" id="modeToggle" aria-label="Switch to Measure mode" aria-pressed="false">Standard</button>
+      <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Calculator mode">
+        <button type="button" role="tab" data-mode="standard" class="active" aria-selected="true">Standard</button>
+        <button type="button" role="tab" data-mode="measure" aria-selected="false">Measure</button>
+        <button type="button" role="tab" data-mode="ask" aria-selected="false">Ask</button>
+      </div>
       <button type="button" class="control-button icon-button" id="historyButton" aria-label="History" title="History">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
       </button>
@@ -785,7 +865,18 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
       <button type="button" class="key operator" data-operator="+">+</button>
 
       <button type="button" class="key measure-key" data-action="fraction-slash" aria-label="Fraction slash">/</button>
-      <button type="button" class="key equals span-3" data-action="equals">=</button>
+      <button type="button" class="key unit-button" id="feetButton" aria-label="Feet" aria-pressed="false">FT <span>'</span></button>
+      <button type="button" class="key unit-button" id="inchesButton" aria-label="Inches" aria-pressed="false">IN <span>&quot;</span></button>
+      <button type="button" class="key equals" data-action="equals">=</button>
+    </div>
+
+    <div class="ask-panel" id="askPanel" hidden aria-label="Ask a question">
+      <form class="ask-form" id="askForm" autocomplete="off">
+        <input id="askInput" type="text" placeholder="days until christmas" enterkeyhint="go" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Question">
+        <button type="submit">Ask</button>
+      </form>
+      <p class="ask-examples-title">Try one</p>
+      <div class="chips" id="askExamples"></div>
     </div>
   </section>
 </div>
@@ -851,6 +942,846 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"><span id="toastMessage"></span><button type="button" id="toastAction" hidden></button></div>
 
 <script>
+// Ask mode. Answers date, unit, percentage, tip, time-zone and plain-math
+// questions by matching a fixed set of phrasings - no network and no AI, so a
+// question outside these patterns gets "Didn't understand that".
+window.AskEngine = (() => {
+  'use strict';
+
+  const DAY_MS = 86400000;
+  const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const MONTH_RE = 'jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?';
+  const WEEKDAY_RE = 'sun(?:day)?|mon(?:day)?|tue(?:s|sday)?|wed(?:nesday)?|thu(?:r|rs|rsday)?|fri(?:day)?|sat(?:urday)?';
+  const SMALL_NUMBERS = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, fifteen: 15, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, ninety: 90, hundred: 100 };
+  const NUM_RE = '\\d+|a|an|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|forty|fifty|sixty|ninety|hundred';
+
+  const fail = message => { throw new Error(message || "Didn't understand that"); };
+  const smallNumber = text => SMALL_NUMBERS[text] ?? Number(text);
+  const monthIndex = text => ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(text.slice(0, 3));
+  const weekdayIndex = text => ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].indexOf(text.slice(0, 3));
+
+  function today() { const now = new Date(); return new Date(now.getFullYear(), now.getMonth(), now.getDate()); }
+  function makeDate(year, month, day) { return new Date(year, month, day); }
+  function addDays(date, n) { return new Date(date.getFullYear(), date.getMonth(), date.getDate() + n); }
+  function addMonths(date, n) {
+    const first = new Date(date.getFullYear(), date.getMonth() + n, 1);
+    const lastDay = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+    return new Date(first.getFullYear(), first.getMonth(), Math.min(date.getDate(), lastDay));
+  }
+  // Both dates are local midnights; a DST hour cannot push the ratio past .5.
+  const daysBetween = (from, to) => Math.round((to - from) / DAY_MS);
+  const isLeap = year => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+  const daysInYear = year => isLeap(year) ? 366 : 365;
+  const dayOfYear = date => daysBetween(makeDate(date.getFullYear(), 0, 1), date) + 1;
+
+  function nthWeekday(year, month, weekday, n) {
+    if (n > 0) { const first = new Date(year, month, 1); return new Date(year, month, 1 + (weekday - first.getDay() + 7) % 7 + (n - 1) * 7); }
+    const last = new Date(year, month + 1, 0);
+    return new Date(year, month + 1, 0 - (last.getDay() - weekday + 7) % 7);
+  }
+
+  // Gregorian Easter (Meeus / Jones / Butcher).
+  function easter(year) {
+    const a = year % 19, b = Math.floor(year / 100), c = year % 100, d = Math.floor(b / 4), e = b % 4;
+    const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    return new Date(year, Math.floor((h + l - 7 * m + 114) / 31) - 1, ((h + l - 7 * m + 114) % 31) + 1);
+  }
+
+  function isoWeek(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    return Math.ceil(((d - Date.UTC(d.getUTCFullYear(), 0, 1)) / DAY_MS + 1) / 7);
+  }
+
+  const longDate = date => `${WEEKDAY_NAMES[date.getDay()]}, ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  const shortDate = date => `${WEEKDAY_NAMES[date.getDay()].slice(0, 3)}, ${MONTH_NAMES[date.getMonth()].slice(0, 3)} ${date.getDate()}, ${date.getFullYear()}`;
+  const plural = (n, word) => `${fmtNumber(n)} ${word}${Math.abs(n) === 1 ? '' : 's'}`;
+
+  function fmtNumber(value, maxDecimals = 4) {
+    if (!Number.isFinite(value)) fail('That number is too large');
+    const rounded = Math.abs(value) >= 1e15 ? value : Number(value.toPrecision(10));
+    return rounded.toLocaleString('en-US', { maximumFractionDigits: maxDecimals });
+  }
+  const fmtMoney = value => `${value < 0 ? '-' : ''}$${Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  // ---- Dates -----------------------------------------------------------
+  const HOLIDAYS = [
+    ["new year'?s?(?: day)?|january 1st", y => makeDate(y, 0, 1), "New Year's Day"],
+    ["mlk(?: day)?|martin luther king(?:,? jr\\.?)?(?: day)?", y => nthWeekday(y, 0, 1, 3), 'MLK Day'],
+    ['groundhog day', y => makeDate(y, 1, 2), 'Groundhog Day'],
+    ["valentine'?s?(?: day)?", y => makeDate(y, 1, 14), "Valentine's Day"],
+    ["presidents'? day|president'?s day|washington'?s birthday", y => nthWeekday(y, 1, 1, 3), "Presidents' Day"],
+    ['leap day', y => isLeap(y) ? makeDate(y, 1, 29) : null, 'Leap Day'],
+    ["st\\.? patrick'?s(?: day)?|st\\.? paddy'?s(?: day)?", y => makeDate(y, 2, 17), "St. Patrick's Day"],
+    ["april fools?'?(?: day)?", y => makeDate(y, 3, 1), "April Fools' Day"],
+    ['good friday', y => addDays(easter(y), -2), 'Good Friday'],
+    ['easter(?: sunday)?', y => easter(y), 'Easter'],
+    ['tax day', y => makeDate(y, 3, 15), 'Tax Day'],
+    ['cinco de mayo', y => makeDate(y, 4, 5), 'Cinco de Mayo'],
+    ["mother'?s?(?: day)?", y => nthWeekday(y, 4, 0, 2), "Mother's Day"],
+    ['memorial day', y => nthWeekday(y, 4, 1, -1), 'Memorial Day'],
+    ['flag day', y => makeDate(y, 5, 14), 'Flag Day'],
+    ["father'?s?(?: day)?", y => nthWeekday(y, 5, 0, 3), "Father's Day"],
+    ['juneteenth', y => makeDate(y, 5, 19), 'Juneteenth'],
+    ['independence day|(?:4th|fourth) of july|july (?:4th|fourth)', y => makeDate(y, 6, 4), 'Independence Day'],
+    ['pioneer day', y => makeDate(y, 6, 24), 'Pioneer Day'],
+    ['labor day', y => nthWeekday(y, 8, 1, 1), 'Labor Day'],
+    ["columbus day|indigenous peoples'? day", y => nthWeekday(y, 9, 1, 2), 'Columbus Day'],
+    ['halloween', y => makeDate(y, 9, 31), 'Halloween'],
+    ['election day', y => addDays(nthWeekday(y, 10, 1, 1), 1), 'Election Day'],
+    ["veterans'? day", y => makeDate(y, 10, 11), 'Veterans Day'],
+    ['thanksgiving(?: day)?', y => nthWeekday(y, 10, 4, 4), 'Thanksgiving'],
+    ['black friday', y => addDays(nthWeekday(y, 10, 4, 4), 1), 'Black Friday'],
+    ['christmas eve|xmas eve', y => makeDate(y, 11, 24), 'Christmas Eve'],
+    ['christmas(?: day)?|xmas', y => makeDate(y, 11, 25), 'Christmas'],
+    ["new year'?s? eve|nye", y => makeDate(y, 11, 31), "New Year's Eve"],
+    ['daylight savings?(?: time)? (?:starts?|begins?)|dst (?:starts?|begins?)|spring forward', y => nthWeekday(y, 2, 0, 2), 'Daylight saving starts'],
+    ['daylight savings?(?: time)? ends?|dst ends?|fall back', y => nthWeekday(y, 10, 0, 1), 'Daylight saving ends'],
+    // Equinoxes and solstices drift a day either way; these are the usual dates.
+    ['(?:first day of )?spring|spring equinox|vernal equinox', y => makeDate(y, 2, 20), 'First day of spring (approx.)'],
+    ['(?:first day of )?summer|summer solstice', y => makeDate(y, 5, 21), 'First day of summer (approx.)'],
+    ['(?:first day of )?(?:fall|autumn)|(?:fall|autumn|autumnal) equinox', y => makeDate(y, 8, 22), 'First day of fall (approx.)'],
+    ['(?:first day of )?winter|winter solstice', y => makeDate(y, 11, 21), 'First day of winter (approx.)']
+  ].map(([pattern, fn, label]) => [new RegExp(`^(?:${pattern})$`), fn, label]);
+
+  // "christmas", "christmas 2027", "next christmas", "last thanksgiving", "easter next year"
+  function parseHoliday(phrase, past) {
+    const m = phrase.match(/^(?:(next|last|this) )?(.+?)(?: (?:of |in )?(\d{4})| (next|last|this) year)?$/);
+    if (!m) return null;
+    const entry = HOLIDAYS.find(([re]) => re.test(m[2]));
+    if (!entry) return null;
+    const [, fn, label] = entry;
+    const now = today(); const thisYear = now.getFullYear();
+    if (m[3]) { const date = fn(Number(m[3])); return date ? { date, label: `${label} ${m[3]}` } : fail(`${m[3]} has no ${label}`); }
+    if (m[4]) { const year = thisYear + (m[4] === 'next' ? 1 : m[4] === 'last' ? -1 : 0); const date = fn(year); return date ? { date, label: `${label} ${year}` } : fail(`${year} has no ${label}`); }
+    const backward = m[1] === 'last' || (past && !m[1]);
+    for (let step = 0; step < 9; step += 1) {
+      const year = thisYear + (backward ? -step : step);
+      const date = fn(year);
+      if (date && (backward ? date <= now : date >= now)) return { date, label: `${label} ${year}` };
+    }
+    return null;
+  }
+
+  const fullYear = text => text.length === 4 ? Number(text) : Number(text) + (Number(text) < 50 ? 2000 : 1900);
+
+  // A calendar phrase -> { date (local midnight), label }. `past` picks the most
+  // recent occurrence of a yearless date instead of the next one; `sameYear`
+  // keeps a yearless month-and-day in the current year ("between june 1 and aug 15").
+  function parseDate(input, past = false, sameYear = false) {
+    const phrase = input.trim().replace(/^(?:i was |i |someone |they were |you were )?born (?:on |in )?/, '').replace(/^(?:on|at) /, '').replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
+    const now = today();
+    let m;
+    if (/^(?:today|now|tonight|this morning|it|it today)$/.test(phrase)) return { date: now, label: 'today' };
+    if (phrase === 'tomorrow') return { date: addDays(now, 1), label: 'tomorrow' };
+    if (phrase === 'yesterday') return { date: addDays(now, -1), label: 'yesterday' };
+    if (/^(?:the )?day after tomorrow$/.test(phrase)) return { date: addDays(now, 2), label: 'the day after tomorrow' };
+    if (/^(?:the )?day before yesterday$/.test(phrase)) return { date: addDays(now, -2), label: 'the day before yesterday' };
+
+    // "in 3 weeks", "3 weeks from today", "90 days after march 3", "2 weeks before christmas", "3 days ago"
+    m = phrase.match(new RegExp(`^(?:in )?(${NUM_RE}) (day|week|month|year)s?(?: (from|after|since|before|prior to|ago|back))?(?: (.+))?$`));
+    if (m && (m[3] || !m[4])) {
+      const count = smallNumber(m[1]); const unit = m[2]; const word = m[3] || 'from';
+      const backward = ['before', 'prior to', 'ago', 'back'].includes(word);
+      let base = { date: now, label: 'today' };
+      if (m[4] && !/^(?:now|today)$/.test(m[4])) { base = parseDate(m[4], past); if (!base) return null; }
+      const n = backward ? -count : count;
+      const date = unit === 'day' ? addDays(base.date, n) : unit === 'week' ? addDays(base.date, n * 7) : addMonths(base.date, unit === 'month' ? n : n * 12);
+      const label = ['ago', 'back'].includes(word) ? `${plural(count, unit)} ago` : `${plural(count, unit)} ${backward ? 'before' : 'after'} ${base.label}`;
+      return { date, label };
+    }
+
+    m = phrase.match(new RegExp(`^(?:(next|this|last|coming|the coming) )?(${WEEKDAY_RE})$`));
+    if (m) {
+      const target = weekdayIndex(m[2]); const qualifier = m[1] || '';
+      const delta = (target - now.getDay() + 7) % 7;
+      let date;
+      if (qualifier === 'last' || (past && !qualifier)) date = addDays(now, delta === 0 ? -7 : delta - 7);
+      else if (qualifier === 'this') date = addDays(now, delta);
+      else date = addDays(now, delta === 0 ? 7 : delta);
+      return { date, label: `${qualifier ? `${qualifier} ` : ''}${WEEKDAY_NAMES[target]}` };
+    }
+
+    const holiday = parseHoliday(phrase, past);
+    if (holiday) return holiday;
+
+    const dated = (year, month, day) => {
+      if (month < 0 || month > 11) return null;
+      if (day < 1 || day > daysInMonth(year, month)) fail(`${MONTH_NAMES[month]} ${year} has no day ${day}`);
+      const date = makeDate(year, month, day);
+      return { date, label: shortDate(date) };
+    };
+    // No year given: the next time that date comes around (or the last, when past).
+    const yearless = (month, day) => {
+      if (month < 0 || month > 11) return null;
+      if (day < 1 || day > 31 || day > daysInMonth(2000, month)) fail(`${MONTH_NAMES[month]} has no day ${day}`);
+      if (sameYear && day <= daysInMonth(now.getFullYear(), month)) { const date = makeDate(now.getFullYear(), month, day); return { date, label: shortDate(date), assumedYear: true }; }
+      for (let step = 0; step < 9; step += 1) {
+        const year = now.getFullYear() + (past ? -step : step);
+        if (day > daysInMonth(year, month)) continue;   // Feb 29 in a common year
+        const date = makeDate(year, month, day);
+        if (past ? date <= now : date >= now) return { date, label: shortDate(date), assumedYear: true };
+      }
+      return null;
+    };
+
+    m = phrase.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) return dated(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    m = phrase.match(/^(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2}|\d{4}))?$/);
+    if (m) return m[3] ? dated(fullYear(m[3]), Number(m[1]) - 1, Number(m[2])) : yearless(Number(m[1]) - 1, Number(m[2]));
+    m = phrase.match(new RegExp(`^(${MONTH_RE})\\.? (\\d{1,2})(?:st|nd|rd|th)?(?: (\\d{4}))?$`));
+    if (m) return m[3] ? dated(Number(m[3]), monthIndex(m[1]), Number(m[2])) : yearless(monthIndex(m[1]), Number(m[2]));
+    m = phrase.match(new RegExp(`^(?:the )?(\\d{1,2})(?:st|nd|rd|th)? (?:of )?(${MONTH_RE})\\.?(?: (\\d{4}))?$`));
+    if (m) return m[3] ? dated(Number(m[3]), monthIndex(m[2]), Number(m[1])) : yearless(monthIndex(m[2]), Number(m[1]));
+    m = phrase.match(new RegExp(`^(${MONTH_RE})\\.?(?: (\\d{4}))?$`));
+    if (m) return m[2] ? dated(Number(m[2]), monthIndex(m[1]), 1) : yearless(monthIndex(m[1]), 1);
+    m = phrase.match(/^(\d{4})$/);
+    if (m) return { date: makeDate(Number(m[1]), 0, 1), label: `Jan 1, ${m[1]}` };
+    m = phrase.match(/^the (\d{1,2})(?:st|nd|rd|th)$/);
+    if (m) {
+      const day = Number(m[1]);
+      for (let step = 0; step < 3; step += 1) {
+        const month = now.getMonth() + (past ? -step : step);
+        if (day > daysInMonth(now.getFullYear(), month)) continue;
+        const date = makeDate(now.getFullYear(), month, day);
+        if (past ? date <= now : date >= now) return { date, label: shortDate(date) };
+      }
+      return null;
+    }
+    m = phrase.match(/^(?:the )?(end|last day|start|beginning|first day|first) of (?:the |this |(next|last) )?(month|year)$/);
+    if (m) {
+      const end = /end|last/.test(m[1]); const offset = m[2] === 'next' ? 1 : m[2] === 'last' ? -1 : 0;
+      const date = m[3] === 'month'
+        ? (end ? makeDate(now.getFullYear(), now.getMonth() + offset + 1, 0) : makeDate(now.getFullYear(), now.getMonth() + offset, 1))
+        : (end ? makeDate(now.getFullYear() + offset, 11, 31) : makeDate(now.getFullYear() + offset, 0, 1));
+      return { date, label: `${end ? 'end' : 'start'} of ${m[2] ? `${m[2]} ` : 'the '}${m[3]}` };
+    }
+    return null;
+  }
+
+  const capitalize = text => text.charAt(0).toUpperCase() + text.slice(1);
+
+  function calendarSpan(from, to) {
+    if (to < from) [from, to] = [to, from];
+    let months = 0;
+    while (addMonths(from, months + 1) <= to) months += 1;
+    return { years: Math.floor(months / 12), months: months % 12, totalMonths: months, days: daysBetween(addMonths(from, months), to) };
+  }
+
+  function spanText(from, to) {
+    const span = calendarSpan(from, to);
+    const parts = [];
+    if (span.years) parts.push(plural(span.years, 'year'));
+    if (span.months) parts.push(plural(span.months, 'month'));
+    if (span.days || !parts.length) parts.push(plural(span.days, 'day'));
+    return parts.join(', ');
+  }
+
+  const weeksText = days => { const w = Math.floor(days / 7), d = days % 7; return w ? `${w} wk${d ? ` ${d} d` : ''}` : `${d} d`; };
+  // "2 mo 26 d" - short enough for the small row under the answer.
+  function compactSpan(from, to) {
+    const span = calendarSpan(from, to);
+    const parts = [];
+    if (span.years) parts.push(`${span.years} yr`);
+    if (span.months) parts.push(`${span.months} mo`);
+    if (span.days || !parts.length) parts.push(`${span.days} d`);
+    return parts.join(' ');
+  }
+  const relativeText = days => days === 0 ? 'today' : days > 0 ? `in ${plural(days, 'day')}` : `${plural(-days, 'day')} ago`;
+  const isDateLabel = label => /^\w{3}, \w{3} \d/.test(label) || label === 'today';
+
+  function dateDetail(target) {
+    const dateText = longDate(target.date);
+    return isDateLabel(target.label) ? dateText : `${capitalize(target.label)} · ${dateText}`;
+  }
+
+  // "58 days", "8.3 weeks", "1 month, 27 days" ... for the span from one date to another.
+  function spanAnswer(from, to, unit) {
+    const days = Math.abs(daysBetween(from, to));
+    if (unit === 'week') return plural(Number((days / 7).toFixed(1)), 'week');
+    if (unit === 'month') { const span = calendarSpan(from, to); return `${plural(span.totalMonths, 'month')}${span.days ? `, ${plural(span.days, 'day')}` : ''}`; }
+    if (unit === 'year') return spanText(from, to);
+    if (unit === 'hour') return plural(Math.round(Math.abs(to - from) / 3600000), 'hour');
+    if (unit === 'minute') return plural(Math.round(Math.abs(to - from) / 60000), 'minute');
+    return plural(days, 'day');
+  }
+
+  function untilReply(target, unit = 'day') {
+    const now = today(); const days = daysBetween(now, target.date);
+    // Hours and minutes count from right now, not from midnight.
+    const from = unit === 'hour' || unit === 'minute' ? new Date() : now;
+    let answer = days === 0 && unit !== 'hour' && unit !== 'minute' ? 'Today' : spanAnswer(from, target.date, unit);
+    if (days < 0) answer += ' ago';
+    return { answer, detail: dateDetail(target), extras: [['Weeks', weeksText(Math.abs(days))], ['Months', compactSpan(now, target.date)], ['Weekday', WEEKDAY_NAMES[target.date.getDay()]]] };
+  }
+
+  function sinceReply(target, unit = 'day') {
+    const now = today(); const days = daysBetween(target.date, now);
+    let answer = days === 0 ? 'Today' : spanAnswer(target.date, now, unit);
+    if (days < 0) answer = `${answer} from now`;
+    return { answer, detail: dateDetail(target), extras: [['Weeks', weeksText(Math.abs(days))], ['Months', compactSpan(target.date, now)], ['Weekday', WEEKDAY_NAMES[target.date.getDay()]]] };
+  }
+
+  function weekdayReply(target) {
+    const days = daysBetween(today(), target.date);
+    return { answer: WEEKDAY_NAMES[target.date.getDay()], detail: dateDetail(target), extras: [[days < 0 ? 'Days ago' : 'Days away', fmtNumber(Math.abs(days))], ['Week', `Week ${isoWeek(target.date)}`], ['Day of year', `${dayOfYear(target.date)} of ${daysInYear(target.date.getFullYear())}`]] };
+  }
+
+  function dateReply(target) {
+    const days = daysBetween(today(), target.date);
+    const detail = isDateLabel(target.label) ? capitalize(relativeText(days)) : `${capitalize(target.label)} · ${relativeText(days)}`;
+    return { answer: shortDate(target.date), detail, extras: [['Weeks', weeksText(Math.abs(days))], ['Week', `Week ${isoWeek(target.date)}`], ['Day of year', `${dayOfYear(target.date)} of ${daysInYear(target.date.getFullYear())}`]] };
+  }
+
+  function betweenReply(a, b, unit, inclusive) {
+    const days = Math.abs(daysBetween(a.date, b.date)) + (inclusive ? 1 : 0);
+    const answer = unit === 'day' ? plural(days, 'day') : spanAnswer(a.date, b.date, unit);
+    return { answer, detail: `${shortDate(a.date)} ${inclusive ? 'through' : 'to'} ${shortDate(b.date)}`, extras: [['Days', fmtNumber(days)], ['Weeks', weeksText(days)], ['Months', compactSpan(a.date, b.date)]] };
+  }
+
+  const DATE_HANDLERS = [];
+  const on = (pattern, fn) => DATE_HANDLERS.push([pattern, fn]);
+  const need = (phrase, past) => parseDate(phrase, past) || fail(`I don't know the date "${phrase}"`);
+  const wasPast = text => /\b(?:was|did|were)\b/.test(text);
+
+  on(/^(?:how (?:many|much) |number of |the number of )?(day|week|month|year|hour|minute)s?(?: (?:are there|is it|is there|left|remaining|to go|away|are left))?(?: from (?:now|today))? (?:until|till|til|before|to|to go (?:until|before)|for) (.+?)(?: from (?:now|today))?$/,
+    m => untilReply(need(m[2]), m[1]));
+  on(/^(?:how long|how much time|time|how much longer|how far away)(?: is it| is there| is left| left| remaining| to go| away)? (?:until|till|til|before|to) (.+)$/, m => untilReply(need(m[1])));
+  on(/^(?:until|till|til|countdown (?:to|for|until)|countdown|time to) (.+)$/, m => untilReply(need(m[1])));
+  on(/^(.+?) countdown$/, m => untilReply(need(m[1])));
+  on(/^(?:how (?:many|much) |number of )?(day|week|month|year)s?(?: (?:ago|have passed|has passed|has it been|have gone by|have there been|passed|have elapsed))? since (.+)$/, m => sinceReply(need(m[2], true), m[1]));
+  on(/^(?:how long (?:has it been |is it |ago |has passed |has elapsed )?since|time since|since|how long ago was|how many days ago was|days ago was) (.+)$/, m => sinceReply(need(m[1], true)));
+  on(/^(?:what|which) (?:day|weekday)(?: of (?:the )?week)? (?:is|was|does|did|will|do|would)(?: it)?(?: be)?(?: on| for)? (.+?)(?: fall(?: on)?| be| land(?: on)?| on)?$/, m => weekdayReply(need(m[1], wasPast(m[0]))));
+  on(/^(.+?) (?:is|was|falls? on|lands? on|will be|will fall on) (?:what|which) (?:day|weekday)(?: of (?:the )?week)?$/, m => weekdayReply(need(m[1], wasPast(m[0]))));
+  on(/^(?:day|weekday|day of (?:the )?week) (?:of|for|on) (.+)$/, m => weekdayReply(need(m[1])));
+  on(/^(?:how many |number of )?(day|week|month|year)?s?\s*(?:between|from) (.+?) (?:and|to|until|till|through) (.+)$/,
+    m => {
+      const a = parseDate(m[2], false, true) || fail(`I don't know the date "${m[2]}"`);
+      const b = parseDate(m[3], false, true) || fail(`I don't know the date "${m[3]}"`);
+      // "dec 20 and jan 5" means the January after that December.
+      if (b.date < a.date && b.assumedYear) { b.date = makeDate(b.date.getFullYear() + 1, b.date.getMonth(), b.date.getDate()); b.label = shortDate(b.date); }
+      return betweenReply(a, b, m[1] || 'day', /\bthrough\b/.test(m[0]));
+    });
+  on(/^(?:when(?:'s| is| does| will| was| did)|what date (?:is|was|does|will)|the date (?:of|for)|date (?:of|for)) (.+?)(?: fall| be| happen| start| land| this year| take place)?$/,
+    m => { const target = parseDate(m[1], wasPast(m[0])); return target ? dateReply(target) : null; });
+
+  function ageReply(phrase) {
+    const now = today();
+    const yearOnly = phrase.match(/^(?:in )?(\d{4})$/);
+    if (yearOnly) {
+      const year = Number(yearOnly[1]); const turns = now.getFullYear() - year;
+      if (turns < 0) fail(`${year} has not happened yet`);
+      return { answer: `${turns - 1} or ${turns}`, detail: `Born in ${year} · turns ${turns} in ${now.getFullYear()}`, extras: [['Turns 16', String(year + 16)], ['Turns 18', String(year + 18)], ['Turns 65', String(year + 65)]] };
+    }
+    const born = need(phrase, true);
+    if (born.date > now) fail('That date is in the future');
+    const span = calendarSpan(born.date, now);
+    let next = makeDate(now.getFullYear(), born.date.getMonth(), born.date.getDate());
+    if (next < now) next = makeDate(now.getFullYear() + 1, born.date.getMonth(), born.date.getDate());
+    const untilNext = daysBetween(now, next);
+    return { answer: plural(span.years, 'year'), detail: `Born ${shortDate(born.date)} · ${spanText(born.date, now)}`,
+      extras: [['Days', fmtNumber(daysBetween(born.date, now))], ['Next birthday', untilNext === 0 ? 'Today!' : `in ${plural(untilNext, 'day')}`], ['Turns', `${span.years + 1} on ${shortDate(next)}`]] };
+  }
+  on(/^(?:how old (?:is|are|am|would|was|will)(?: someone| a person| i| you| they| he| she| somebody)?(?: be)?(?: who was| who is| if(?: they were| i was| he was| she was| they are)?| that was| whose birthday is)?(?: born)?(?: on| in)? )(.+)$/, m => ageReply(m[1]));
+  on(/^(?:age (?:of someone |if |for someone |for |of a person |of )?born|(?:i was |someone |they were )?born) (?:on |in )?(.+?)(?:,? (?:how old(?: am i| are they| is that| is he| is she)?|age))?$/, m => ageReply(m[1]));
+  on(/^(?:age|how old) (?:for |of |on )?(.+)$/, m => { try { return ageReply(m[1]); } catch (error) { return null; } });
+  on(/^(?:what (?:birth )?year .*?born.*?|birth year (?:for|if|of) .*?|year born (?:if|for) .*?)(\d{1,3})(?: years? old)?$/, m => {
+    const age = Number(m[1]); const year = today().getFullYear();
+    return { answer: `${year - age} or ${year - age - 1}`, detail: `For someone who is ${age} today`, extras: [['Birthday passed', String(year - age)], ['Not yet', String(year - age - 1)]] };
+  });
+
+  const nextLeap = year => { let y = year; while (!isLeap(y)) y += 1; return y; };
+  on(/^(?:how many )?days (?:are )?(?:left|remaining|to go) (?:in|of) (?:the |this )?(year|month)(?: (\d{4}))?$/, m => {
+    const now = today();
+    const end = m[1] === 'year' ? makeDate(m[2] ? Number(m[2]) : now.getFullYear(), 11, 31) : makeDate(now.getFullYear(), now.getMonth() + 1, 0);
+    const days = daysBetween(now, end);
+    return { answer: plural(days, 'day'), detail: `Until ${longDate(end)}`, extras: [['Weeks', weeksText(Math.abs(days))], ['Today', shortDate(now)], ['Day of year', `${dayOfYear(now)} of ${daysInYear(now.getFullYear())}`]] };
+  });
+  on(new RegExp(`^(?:how many )?days (?:are (?:there )?)?in (${MONTH_RE})(?: (?:of )?(\\d{4}))?$`), m => {
+    const year = m[2] ? Number(m[2]) : today().getFullYear(); const month = monthIndex(m[1]);
+    return { answer: plural(daysInMonth(year, month), 'day'), detail: `${MONTH_NAMES[month]} ${year}`,
+      extras: [['Starts on', WEEKDAY_NAMES[makeDate(year, month, 1).getDay()]], ['Ends on', WEEKDAY_NAMES[makeDate(year, month + 1, 0).getDay()]], ['Leap year', isLeap(year) ? 'Yes' : 'No']] };
+  });
+  on(/^(?:how many )?days (?:are (?:there )?)?in (?:the year |)(\d{4})$/, m => ({ answer: plural(daysInYear(Number(m[1])), 'day'), detail: `${m[1]} is ${isLeap(Number(m[1])) ? '' : 'not '}a leap year`, extras: [['Next leap year', String(nextLeap(Number(m[1]) + 1))]] }));
+  on(/^(?:is|was|will) (\d{4}) (?:be )?a leap year$/, m => ({ answer: isLeap(Number(m[1])) ? 'Yes' : 'No', detail: `${m[1]} has ${daysInYear(Number(m[1]))} days`, extras: [['Next leap year', String(nextLeap(Number(m[1]) + 1))]] }));
+  on(/^(?:when(?:'s| is) )?(?:the )?next leap (?:year|day)$/, () => {
+    const now = today(); const year = nextLeap(now.getFullYear() + (isLeap(now.getFullYear()) && now <= makeDate(now.getFullYear(), 1, 29) ? 0 : 1));
+    const leapDay = makeDate(year, 1, 29);
+    return { answer: String(year), detail: `Leap day is ${longDate(leapDay)}`, extras: [['Days away', fmtNumber(daysBetween(now, leapDay))], ['Weekday', WEEKDAY_NAMES[leapDay.getDay()]]] };
+  });
+  on(/^(?:what )?(?:week|week number|iso week|week of the year)(?: is it| number| are we in| is this)?(?: now| today)?$/, () => {
+    const now = today();
+    return { answer: `Week ${isoWeek(now)}`, detail: longDate(now), extras: [['Day of year', `${dayOfYear(now)} of ${daysInYear(now.getFullYear())}`], ['Weeks left', String(Math.floor(daysBetween(now, makeDate(now.getFullYear(), 11, 31)) / 7))]] };
+  });
+  on(/^(?:what )?day of (?:the )?year(?: is it| is today)?$/, () => {
+    const now = today();
+    return { answer: `Day ${dayOfYear(now)}`, detail: `${longDate(now)} · ${daysInYear(now.getFullYear()) - dayOfYear(now)} days left`, extras: [['Week', `Week ${isoWeek(now)}`]] };
+  });
+  on(/^(?:today|today's date|todays date|the date|date today|current date|the date today|what day is (?:it|today)|what day is it today|which day is it|what(?:'s| is) today)$/, () => {
+    const now = today();
+    return { answer: shortDate(now), detail: `Day ${dayOfYear(now)} of ${daysInYear(now.getFullYear())} · Week ${isoWeek(now)}`, extras: [['Days left in year', fmtNumber(daysBetween(now, makeDate(now.getFullYear(), 11, 31)))], ['Leap year', isLeap(now.getFullYear()) ? 'Yes' : 'No']] };
+  });
+  on(/^(?:what )?(?:year|the year|current year)(?: is it)?$/, () => ({ answer: String(today().getFullYear()), detail: longDate(today()), extras: [] }));
+
+  on(new RegExp(`^(?:how many )?(${WEEKDAY_RE}|weekend)s? (?:are there |are |left |remaining )?(?:until|till|before|between now and) (.+)$`), m => {
+    const target = need(m[2]); const now = today();
+    const weekend = m[1].startsWith('weekend'); const weekday = weekend ? 6 : weekdayIndex(m[1]);
+    if (daysBetween(now, target.date) > 40000) fail('That is too far away to count');
+    let count = 0;
+    for (let d = addDays(now, 1); d <= target.date; d = addDays(d, 1)) if (d.getDay() === weekday) count += 1;
+    return { answer: plural(count, weekend ? 'weekend' : WEEKDAY_NAMES[weekday]), detail: `From tomorrow through ${dateDetail(target)}`, extras: [['Days', fmtNumber(daysBetween(now, target.date))], ['Weeks', weeksText(daysBetween(now, target.date))]] };
+  });
+  on(/^(?:how many )?(?:business|work|working|week) ?days (?:are there |left |remaining )?(?:until|till|before|between|from) (.+?)(?: (?:and|to|until|till) (.+))?$/, m => {
+    const now = today();
+    const a = m[2] ? need(m[1]) : { date: now, label: 'today' }; const b = need(m[2] || m[1]);
+    const [from, to] = a.date <= b.date ? [a.date, b.date] : [b.date, a.date];
+    if (daysBetween(from, to) > 40000) fail('That is too far apart to count');
+    let count = 0;
+    for (let d = addDays(from, 1); d <= to; d = addDays(d, 1)) if (d.getDay() % 6) count += 1;
+    return { answer: plural(count, 'business day'), detail: `${shortDate(from)} to ${shortDate(to)} · Mon–Fri, holidays not skipped`, extras: [['Calendar days', fmtNumber(daysBetween(from, to))], ['Weeks', weeksText(daysBetween(from, to))]] };
+  });
+
+  function answerDates(q) {
+    for (const [pattern, fn] of DATE_HANDLERS) {
+      const m = q.match(pattern);
+      if (m) { const reply = fn(m); if (reply) return reply; }
+    }
+    return null;
+  }
+
+  // A bare calendar phrase ("next friday", "3 weeks from today", "christmas") is a date question too.
+  function bareDate(q) {
+    if (/^\d+(?:\.\d+)?$/.test(q)) return null;
+    const target = parseDate(q.replace(/^(?:date |the date |what date is |date of )/, ''));
+    return target ? dateReply(target) : null;
+  }
+
+  // ---- Units -----------------------------------------------------------
+  // [category, factor to the category's base unit, singular, plural, aliases...]
+  const UNIT_ROWS = [
+    ['length', 0.001, 'millimeter', 'millimeters', 'mm', 'millimetre', 'millimetres'],
+    ['length', 0.01, 'centimeter', 'centimeters', 'cm', 'centimetre', 'centimetres'],
+    ['length', 1, 'meter', 'meters', 'm', 'metre', 'metres'],
+    ['length', 1000, 'kilometer', 'kilometers', 'km', 'kilometre', 'kilometres', 'k'],
+    ['length', 0.0254, 'inch', 'inches', 'in', '"', 'inchs'],
+    ['length', 0.3048, 'foot', 'feet', 'ft', "'", 'foots'],
+    ['length', 0.9144, 'yard', 'yards', 'yd', 'yds'],
+    ['length', 1609.344, 'mile', 'miles', 'mi'],
+    ['length', 1852, 'nautical mile', 'nautical miles', 'nmi'],
+    ['area', 0.00064516, 'square inch', 'square inches', 'sq in', 'sqin', 'in2', 'in²', 'inch²'],
+    ['area', 0.09290304, 'square foot', 'square feet', 'sq ft', 'sqft', 'ft2', 'ft²', 'feet²', 'foot²'],
+    ['area', 0.83612736, 'square yard', 'square yards', 'sq yd', 'sqyd', 'yd2', 'yd²'],
+    ['area', 1, 'square meter', 'square meters', 'sq m', 'sqm', 'm2', 'm²', 'square metre', 'square metres'],
+    ['area', 1e6, 'square kilometer', 'square kilometers', 'sq km', 'km2', 'km²'],
+    ['area', 2589988.110336, 'square mile', 'square miles', 'sq mi', 'mi2', 'mi²'],
+    ['area', 4046.8564224, 'acre', 'acres', 'ac'],
+    ['area', 10000, 'hectare', 'hectares', 'ha'],
+    ['volume', 0.001, 'milliliter', 'milliliters', 'ml', 'millilitre', 'millilitres', 'cc', 'cubic centimeter', 'cubic centimeters'],
+    ['volume', 1, 'liter', 'liters', 'l', 'litre', 'litres'],
+    ['volume', 0.00492892159375, 'teaspoon', 'teaspoons', 'tsp'],
+    ['volume', 0.01478676478125, 'tablespoon', 'tablespoons', 'tbsp', 'tbs'],
+    ['volume', 0.0295735295625, 'fluid ounce', 'fluid ounces', 'fl oz', 'floz', 'fluid oz'],
+    ['volume', 0.2365882365, 'cup', 'cups', 'c'],
+    ['volume', 0.473176473, 'pint', 'pints', 'pt'],
+    ['volume', 0.946352946, 'quart', 'quarts', 'qt'],
+    ['volume', 3.785411784, 'gallon', 'gallons', 'gal'],
+    ['volume', 0.016387064, 'cubic inch', 'cubic inches', 'cu in', 'cuin', 'in3', 'in³'],
+    ['volume', 28.316846592, 'cubic foot', 'cubic feet', 'cu ft', 'cuft', 'ft3', 'ft³'],
+    ['volume', 764.554857984, 'cubic yard', 'cubic yards', 'cu yd', 'cuyd', 'yd3', 'yd³', 'yard of concrete', 'yards of concrete'],
+    ['volume', 1000, 'cubic meter', 'cubic meters', 'cu m', 'm3', 'm³', 'cubic metre', 'cubic metres'],
+    ['weight', 0.001, 'gram', 'grams', 'g'],
+    ['weight', 1, 'kilogram', 'kilograms', 'kg', 'kilo', 'kilos'],
+    ['weight', 0.028349523125, 'ounce', 'ounces', 'oz'],
+    ['weight', 0.45359237, 'pound', 'pounds', 'lb', 'lbs'],
+    ['weight', 6.35029318, 'stone', 'stone', 'st'],
+    ['weight', 907.18474, 'ton', 'tons', 'short ton', 'short tons', 'us ton', 'us tons'],
+    ['weight', 1000, 'tonne', 'tonnes', 'metric ton', 'metric tons', 't'],
+    ['speed', 0.44704, 'mph', 'mph', 'miles per hour', 'mi/h', 'miles an hour'],
+    ['speed', 0.2777777777777778, 'km/h', 'km/h', 'kph', 'kmh', 'kilometers per hour', 'kilometres per hour'],
+    ['speed', 1, 'm/s', 'm/s', 'meters per second', 'metres per second'],
+    ['speed', 0.3048, 'ft/s', 'ft/s', 'feet per second', 'fps'],
+    ['speed', 0.5144444444444445, 'knot', 'knots', 'kt', 'kts'],
+    ['time', 1, 'second', 'seconds', 's', 'sec', 'secs'],
+    ['time', 60, 'minute', 'minutes', 'min', 'mins'],
+    ['time', 3600, 'hour', 'hours', 'h', 'hr', 'hrs'],
+    ['time', 86400, 'day', 'days', 'd'],
+    ['time', 604800, 'week', 'weeks', 'wk', 'wks'],
+    ['time', 2629746, 'month', 'months', 'mo', 'mos'],
+    ['time', 31556952, 'year', 'years', 'yr', 'yrs'],
+    ['pressure', 1, 'pascal', 'pascals', 'pa'],
+    ['pressure', 1000, 'kilopascal', 'kilopascals', 'kpa'],
+    ['pressure', 6894.757293168, 'psi', 'psi', 'pounds per square inch'],
+    ['pressure', 100000, 'bar', 'bar', 'bars'],
+    ['pressure', 101325, 'atmosphere', 'atmospheres', 'atm'],
+    ['power', 1, 'watt', 'watts', 'w'],
+    ['power', 1000, 'kilowatt', 'kilowatts', 'kw'],
+    ['power', 745.69987158227, 'horsepower', 'horsepower', 'hp'],
+    ['energy', 1, 'joule', 'joules', 'j'],
+    ['energy', 1000, 'kilojoule', 'kilojoules', 'kj'],
+    ['energy', 4184, 'kilocalorie', 'kilocalories', 'kcal', 'calorie', 'calories', 'cal'],
+    ['energy', 3600000, 'kilowatt hour', 'kilowatt hours', 'kwh'],
+    ['energy', 1055.05585262, 'btu', 'btu', 'btus'],
+    ['data', 1, 'byte', 'bytes', 'b'],
+    ['data', 1024, 'kilobyte', 'kilobytes', 'kb'],
+    ['data', 1048576, 'megabyte', 'megabytes', 'mb'],
+    ['data', 1073741824, 'gigabyte', 'gigabytes', 'gb'],
+    ['data', 1099511627776, 'terabyte', 'terabytes', 'tb'],
+    ['temperature', 1, '°F', '°F', 'f', 'fahrenheit', 'degrees f', 'degrees fahrenheit', 'deg f'],
+    ['temperature', 1, '°C', '°C', 'c', 'celsius', 'centigrade', 'degrees c', 'degrees celsius', 'deg c'],
+    ['temperature', 1, 'K', 'K', 'kelvin', 'kelvins'],
+    ['fuel', 1, 'mpg', 'mpg', 'miles per gallon'],
+    ['fuel', 1, 'L/100km', 'L/100km', 'litersperhundredkm', 'liters per hundred km', 'litres per hundred km']
+  ];
+  const UNITS = [];
+  const UNIT_ALIASES = new Map();
+  for (const [category, factor, singular, pluralName, ...aliases] of UNIT_ROWS) {
+    const unit = { category, factor, singular, plural: pluralName };
+    UNITS.push(unit);
+    for (const alias of [singular, pluralName, ...aliases]) UNIT_ALIASES.set(alias.toLowerCase(), unit);
+  }
+  // Popular targets per category, used for "5 miles" with no target and for the extras row.
+  const POPULAR = {
+    length: ['km', 'm', 'ft', 'mi', 'cm', 'in'], area: ['sq ft', 'sq m', 'acres', 'sq yd'], volume: ['l', 'gal', 'cups', 'ml', 'cu ft'],
+    weight: ['kg', 'lb', 'oz', 'g'], speed: ['km/h', 'mph', 'm/s'], time: ['hours', 'days', 'minutes', 'weeks'], pressure: ['bar', 'psi', 'kpa'],
+    power: ['kw', 'hp', 'w'], energy: ['kcal', 'kj', 'kwh'], data: ['gb', 'mb', 'tb'], temperature: ['c', 'f', 'k'], fuel: ['l/100km', 'mpg']
+  };
+  // "c" is cups in a volume question and Celsius in a temperature one; prefer the
+  // reading that shares a category with the other unit.
+  const AMBIGUOUS = { c: ['°C', 'cup'], oz: ['ounce', 'fluid ounce'], t: ['tonne'], st: ['stone'], k: ['kilometer', 'K'], m: ['meter', 'minute'], s: ['second'], d: ['day'], pt: ['pint'], in: ['inch'] };
+
+  function unitCandidates(text) {
+    const key = text.trim().replace(/\./g, '').replace(/\s+/g, ' ')
+      .replace(/^(?:square|sq) (?:feet|foot|ft)$/, 'sq ft').replace(/^(?:cubic|cu) (?:feet|foot|ft)$/, 'cu ft')
+      .replace(/^degrees? (f|c)$/, 'degrees $1').replace(/^°\s*/, '').replace(/^(f|c|k)°?$/, '$1');
+    const names = AMBIGUOUS[key] ? AMBIGUOUS[key].map(name => UNIT_ALIASES.get(name.toLowerCase())) : [UNIT_ALIASES.get(key)];
+    return names.filter(Boolean);
+  }
+
+  function pickUnits(fromText, toText) {
+    const from = unitCandidates(fromText), to = unitCandidates(toText);
+    for (const a of from) for (const b of to) if (a.category === b.category) return [a, b];
+    if (from.length && to.length) fail(`Can't convert ${from[0].plural} to ${to[0].plural}`);
+    return null;
+  }
+
+  function convertValue(value, from, to) {
+    if (from.category === 'temperature') {
+      const c = from.singular === '°F' ? (value - 32) * 5 / 9 : from.singular === 'K' ? value - 273.15 : value;
+      return to.singular === '°F' ? c * 9 / 5 + 32 : to.singular === 'K' ? c + 273.15 : c;
+    }
+    if (from.category === 'fuel') {
+      if (from.singular === to.singular) return value;
+      if (value === 0) fail('Fuel economy cannot be zero');
+      return 235.214583 / value;   // mpg <-> L/100km
+    }
+    return value * from.factor / to.factor;
+  }
+
+  const unitLabel = (value, unit) => Math.abs(value) === 1 ? unit.singular : unit.plural;
+  const quantityText = (value, unit) => `${fmtNumber(value, unit.category === 'temperature' ? 1 : 4)} ${unitLabel(value, unit)}`;
+  const parseNumber = text => Number(String(text).replace(/[,$]/g, ''));
+
+  function conversionReply(value, from, to) {
+    const result = convertValue(value, from, to);
+    const extras = POPULAR[from.category].map(name => UNIT_ALIASES.get(name)).filter(unit => unit !== from && unit !== to).slice(0, 3)
+      .map(unit => [unit.plural, quantityText(convertValue(value, from, unit), unit)]);
+    return { answer: quantityText(result, to), detail: `${quantityText(value, from)} in ${to.plural}`, extras, value: result };
+  }
+
+  const NUMBER_RE = '-?\\$?[\\d,]*\\.?\\d+';
+  const UNIT_TEXT_RE = "[a-z°\\/'\"²³ ]+?";
+  function answerUnits(question) {
+    // "l/100km" has digits in it, which the unit pattern otherwise keeps out.
+    const q = question.replace(/l(?:iters?|itres?)? ?(?:\/|per) ?100 ?km/g, 'litersperhundredkm');
+    let m;
+    // 5'10" in cm, 6 ft 2 in cm, 5 feet 10 inches to meters
+    m = q.match(new RegExp(`^(\\d+(?:\\.\\d+)?)\\s*(?:'|ft|feet|foot)\\s*(\\d+(?:\\.\\d+)?)\\s*(?:"|in|inch|inches)?\\s+(?:in|to|as|into|=)\\s+(${UNIT_TEXT_RE})$`));
+    if (m) { const to = unitCandidates(m[3]).find(unit => unit.category === 'length'); if (to) return conversionReply(Number(m[1]) * 12 + Number(m[2]), UNIT_ALIASES.get('inch'), to); }
+    m = q.match(new RegExp(`^(?:convert )?(${NUMBER_RE})\\s*(${UNIT_TEXT_RE})\\s+(?:in|to|as|into|=|equals|->)\\s+(${UNIT_TEXT_RE})$`));
+    if (m) { const units = pickUnits(m[2], m[3]); if (units) return conversionReply(parseNumber(m[1]), units[0], units[1]); }
+    // how many feet in a mile, cups in a gallon, seconds in a day
+    m = q.match(new RegExp(`^(?:how many |number of )?(${UNIT_TEXT_RE}) (?:are |is )?(?:there )?(?:in|per|to) (?:a |an |one |1 |the )?(${UNIT_TEXT_RE})$`));
+    if (m) { const units = pickUnits(m[2], m[1]); if (units) return conversionReply(1, units[0], units[1]); }
+    // 5 miles -> the popular conversions
+    m = q.match(new RegExp(`^(?:convert )?(${NUMBER_RE})\\s*(${UNIT_TEXT_RE})$`));
+    if (m) {
+      const from = unitCandidates(m[2])[0];
+      if (from) { const to = POPULAR[from.category].map(name => UNIT_ALIASES.get(name)).find(unit => unit !== from); return conversionReply(parseNumber(m[1]), from, to); }
+    }
+    return null;
+  }
+
+  // ---- Percentages, money, plain math ----------------------------------
+  const MONEY_RE = '-?\\$?[\\d,]*\\.?\\d+';
+  const COUNT_RE = '\\d+|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve';
+  const num = text => Number(String(text).replace(/[,$\s]/g, ''));
+  const looksLikeMoney = q => /\$|\b(?:tip|tax|bill|price|cost|discount|off|split|sale|pay|paid|fee|rent|budget)\b/.test(q);
+  const money = (value, dollar) => dollar ? fmtMoney(value) : fmtNumber(value, 2);
+  const pct = value => `${fmtNumber(value, 2)}%`;
+  const MONEY_HANDLERS = [];
+  const onMoney = (pattern, fn) => MONEY_HANDLERS.push([pattern, fn]);
+
+  onMoney(new RegExp(`^(${MONEY_RE})\\s*% of (${MONEY_RE})$`), (m, q) => {
+    const rate = num(m[1]), base = num(m[2]), result = base * rate / 100, d = looksLikeMoney(q);
+    return { answer: money(result, d), detail: `${pct(rate)} of ${money(base, d)}`, extras: [['Remaining', money(base - result, d)], ['Plus', money(base + result, d)], ['Minus', money(base - result, d)]].slice(0, 2), value: result };
+  });
+  onMoney(new RegExp(`^(?:(${MONEY_RE})\\s*% (?:off|off of|discount on|less than|reduction on|reduction of) (${MONEY_RE})|(${MONEY_RE}) (?:minus|less|-) (${MONEY_RE})\\s*%|(${MONEY_RE}) (?:with|at|after) (?:a )?(${MONEY_RE})\\s*% (?:off|discount))$`), m => {
+    const rate = num(m[1] ?? m[4] ?? m[6]), base = num(m[2] ?? m[3] ?? m[5]), saved = base * rate / 100;
+    return { answer: fmtMoney(base - saved), detail: `${pct(rate)} off ${fmtMoney(base)}`, extras: [['You save', fmtMoney(saved)], ['Original', fmtMoney(base)], ['Another ' + pct(rate) + ' off', fmtMoney((base - saved) * (1 - rate / 100))]], value: base - saved };
+  });
+  onMoney(new RegExp(`^(?:(${MONEY_RE}) (?:plus|\\+|and|with) (${MONEY_RE})\\s*%(?: tax| sales tax| markup| interest| increase| more| added)?|(${MONEY_RE})\\s*% (?:tax|sales tax|markup|interest) on (${MONEY_RE})|(?:add|plus) (${MONEY_RE})\\s*%(?: tax| markup)? to (${MONEY_RE})|(${MONEY_RE}) (?:plus|with|including|incl\\.?|after) (?:tax|sales tax) (?:of |at )?(${MONEY_RE})\\s*%)$`), (m, q) => {
+    const base = num(m[1] ?? m[4] ?? m[6] ?? m[7]), rate = num(m[2] ?? m[3] ?? m[5] ?? m[8]), added = base * rate / 100;
+    const d = looksLikeMoney(q) || /tax|markup|interest/.test(q);
+    const label = /tax/.test(q) ? 'Tax' : /markup/.test(q) ? 'Markup' : /interest/.test(q) ? 'Interest' : 'Added';
+    return { answer: money(base + added, d), detail: `${money(base, d)} plus ${pct(rate)}`, extras: [[label, money(added, d)], ['Before', money(base, d)]], value: base + added };
+  });
+  onMoney(new RegExp(`^(?:(?:tip|gratuity)(?: of)? (${MONEY_RE})\\s*% on (${MONEY_RE})|(${MONEY_RE})\\s*% tip on (${MONEY_RE})|(${MONEY_RE}) (?:plus|with|and) (?:a )?(${MONEY_RE})\\s*% tip|tip (?:on|for) (${MONEY_RE})(?: at (${MONEY_RE})\\s*%)?|(${MONEY_RE}) tip)$`), m => {
+    const bill = num(m[2] ?? m[4] ?? m[5] ?? m[7] ?? m[9]); const rate = m[1] ?? m[3] ?? m[6] ?? m[8]; const r = rate ? num(rate) : 20; const tip = bill * r / 100;
+    const others = [15, 18, 20, 22].filter(p => p !== r).slice(0, 2).map(p => [`${p}% tip`, fmtMoney(bill * p / 100)]);
+    return { answer: fmtMoney(tip), detail: `${pct(r)} tip on ${fmtMoney(bill)}`, extras: [['Total', fmtMoney(bill + tip)], ...others], value: tip };
+  });
+  onMoney(new RegExp(`^(?:(${MONEY_RE}) (?:is|as|=) what\\s*% of (${MONEY_RE})|what\\s*% (?:is|of) (${MONEY_RE}) (?:of|out of|in|is) (${MONEY_RE})|(${MONEY_RE}) (?:out )?of (${MONEY_RE}) (?:as|in|to)(?: a)?\\s*%|(${MONEY_RE})\\s*/\\s*(${MONEY_RE}) (?:as|in|to)(?: a)?\\s*%|(${MONEY_RE}) (?:out )?of (${MONEY_RE}) ?%)$`), m => {
+    const part = num(m[1] ?? m[3] ?? m[5] ?? m[7] ?? m[9]), whole = num(m[2] ?? m[4] ?? m[6] ?? m[8] ?? m[10]);
+    if (whole === 0) fail("Can't divide by zero");
+    const result = part / whole * 100;
+    return { answer: pct(result), detail: `${fmtNumber(part)} of ${fmtNumber(whole)}`, extras: [['Decimal', fmtNumber(part / whole, 4)], ['Remaining', pct(100 - result)]], value: result };
+  });
+  onMoney(new RegExp(`^(?:%\\s*(?:change|increase|decrease|difference|diff) (?:from|between|of) (${MONEY_RE}) (?:to|and) (${MONEY_RE})|(?:from )?(${MONEY_RE}) to (${MONEY_RE})\\s*%(?: change| increase| decrease| difference)?|(?:increase|decrease|change|growth) from (${MONEY_RE}) to (${MONEY_RE}))$`), m => {
+    const a = num(m[1] ?? m[3] ?? m[5]), b = num(m[2] ?? m[4] ?? m[6]);
+    if (a === 0) fail("Can't measure change from zero");
+    const result = (b - a) / a * 100;
+    return { answer: `${result > 0 ? '+' : ''}${pct(result)}`, detail: `${fmtNumber(a)} → ${fmtNumber(b)}`, extras: [['Difference', fmtNumber(b - a)], ['Ratio', `${fmtNumber(b / a, 3)}×`]], value: result };
+  });
+  onMoney(new RegExp(`^(?:(?:split|divide|share) (${MONEY_RE}) (?:(?:between|among|across|by|into|in|for) )?(${COUNT_RE})|(${MONEY_RE}) (?:split|divided|shared) (?:(?:between|among|across|by|into|in|for) )?(${COUNT_RE})|(${MONEY_RE}) (?:between|among|for) (${COUNT_RE}))(?: ways?| people| persons| friends| of us| guys| roommates| kids| families)?$`), m => {
+    const total = num(m[1] ?? m[3] ?? m[5]), people = smallNumber(m[2] ?? m[4] ?? m[6]);
+    if (!people) fail("Can't split between zero people");
+    const each = total / people;
+    return { answer: fmtMoney(each), detail: `${fmtMoney(total)} split ${people} ways`, extras: [['With 18% tip', fmtMoney(total * 1.18 / people)], ['With 20% tip', fmtMoney(total * 1.2 / people)], ['Rounded up', fmtMoney(Math.ceil(each))]], value: each };
+  });
+  const FRACTION_WORDS = { half: 0.5, 'a half': 0.5, 'one half': 0.5, 'a third': 1 / 3, 'one third': 1 / 3, 'a quarter': 0.25, 'one quarter': 0.25, 'a fourth': 0.25, 'a fifth': 0.2, 'one fifth': 0.2, 'a tenth': 0.1, 'one tenth': 0.1, 'two thirds': 2 / 3, 'three quarters': 0.75, 'three fourths': 0.75, double: 2, twice: 2, triple: 3, quadruple: 4 };
+  onMoney(new RegExp(`^(?:(half|a half|one half|a third|one third|a quarter|one quarter|a fourth|a fifth|one fifth|a tenth|one tenth|two thirds|three quarters|three fourths) of (${MONEY_RE})|(double|twice|triple|quadruple) (${MONEY_RE}))$`), (m, q) => {
+    const base = num(m[2] ?? m[4]), result = base * FRACTION_WORDS[m[1] ?? m[3]], d = looksLikeMoney(q);
+    return { answer: money(result, d), detail: `${m[1] ? `${m[1]} of` : m[3]} ${money(base, d)}`, extras: [], value: result };
+  });
+  onMoney(new RegExp(`^(?:(${MONEY_RE}) (squared|cubed)|(?:square root|sqrt|root)(?: of)? (${MONEY_RE})|cube root(?: of)? (${MONEY_RE})|(${MONEY_RE})\\s*(?:\\^|\\*\\*|to the(?: power(?: of)?)?) ?(${MONEY_RE})(?:st|nd|rd|th)?(?: power)?|(${MONEY_RE})\\s*(?:!| factorial))$`), m => {
+    let value, detail;
+    if (m[2]) { const n = num(m[1]); value = m[2] === 'squared' ? n * n : n ** 3; detail = `${fmtNumber(n)} ${m[2]}`; }
+    else if (m[3] !== undefined) { const n = num(m[3]); if (n < 0) fail('Negative numbers have no real square root'); value = Math.sqrt(n); detail = `√${fmtNumber(n)}`; }
+    else if (m[4] !== undefined) { value = Math.cbrt(num(m[4])); detail = `∛${fmtNumber(num(m[4]))}`; }
+    else if (m[5] !== undefined) { value = num(m[5]) ** num(m[6]); detail = `${fmtNumber(num(m[5]))}^${fmtNumber(num(m[6]))}`; }
+    else { const n = num(m[7]); if (!Number.isInteger(n) || n < 0 || n > 170) fail('Factorial needs a whole number up to 170'); value = 1; for (let i = 2; i <= n; i += 1) value *= i; detail = `${n}!`; }
+    return { answer: fmtNumber(value, 6), detail, extras: [], value };
+  });
+  onMoney(/^(average|avg|mean|sum|total|add up|max|maximum|min|minimum|median|range|count)(?: of)?:? ((?:-?[\d,]*\.?\d+)(?:(?:,|\s|and|\+)+-?[\d,]*\.?\d+)+)$/, m => {
+    const raw = m[2].trim();
+    const values = (/\s/.test(raw) ? raw.split(/(?:\s+|\band\b|\+|,\s+)+/) : raw.split(',')).filter(Boolean).map(num).filter(Number.isFinite);
+    const sum = values.reduce((a, b) => a + b, 0), sorted = [...values].sort((a, b) => a - b), mid = sorted.length / 2;
+    const median = sorted.length % 2 ? sorted[Math.floor(mid)] : (sorted[mid - 1] + sorted[mid]) / 2;
+    const which = m[1];
+    const result = /^(?:sum|total|add up)$/.test(which) ? sum : /^max/.test(which) ? sorted[sorted.length - 1] : /^min/.test(which) ? sorted[0]
+      : which === 'median' ? median : which === 'range' ? sorted[sorted.length - 1] - sorted[0] : which === 'count' ? values.length : sum / values.length;
+    return { answer: fmtNumber(result), detail: `${capitalize(which)} of ${values.length} numbers`, extras: [['Sum', fmtNumber(sum)], ['Average', fmtNumber(sum / values.length)], ['Median', fmtNumber(median)]], value: result };
+  });
+  onMoney(/^(?:(?:flip|toss) (?:a )?coin(?: flip| toss)?|coin (?:flip|toss)|heads or tails)$/, () => ({ answer: Math.random() < 0.5 ? 'Heads' : 'Tails', detail: 'Coin flip', extras: [] }));
+  onMoney(/^(?:(?:roll|throw)(?: a| the)?(?: (\d+|two|three|four|five|six))?(?: (\d+)[- ]sided)? (?:die|dice)|(?:roll )?(\d*)d(\d+))$/, m => {
+    const count = Math.min(20, smallNumber(m[1] || m[3] || '1') || 1), sides = Number(m[2] || m[4] || 6);
+    if (sides < 2) fail('A die needs at least two sides');
+    const rolls = Array.from({ length: count }, () => 1 + Math.floor(Math.random() * sides));
+    const total = rolls.reduce((a, b) => a + b, 0);
+    return { answer: String(total), detail: count > 1 ? `Rolled ${rolls.join(' + ')}` : `${sides}-sided die`, extras: count > 1 ? [['Dice', `${count}d${sides}`]] : [], value: total };
+  });
+  onMoney(/^(?:(?:random|pick|choose|give me)(?: a| me a)? (?:random )?number(?: between| from)? (-?\d+) (?:and|to|-) (-?\d+)|random (-?\d+)-(-?\d+)|random number)$/, m => {
+    const lo = Number(m[1] ?? m[3] ?? 1), hi = Number(m[2] ?? m[4] ?? 100), [a, b] = lo <= hi ? [lo, hi] : [hi, lo];
+    const value = a + Math.floor(Math.random() * (b - a + 1));
+    return { answer: String(value), detail: `Random number from ${a} to ${b}`, extras: [], value };
+  });
+  onMoney(/^(?:pick|choose|decide|random)(?: one| for me| between| from)?:? (.+?(?:,| or ).+)$/, m => {
+    const options = m[1].split(/\s*,\s*|\s+or\s+/).map(option => option.trim()).filter(Boolean);
+    if (options.length < 2) return null;
+    return { answer: capitalize(options[Math.floor(Math.random() * options.length)]), detail: `Picked from ${options.length} options`, extras: [] };
+  });
+
+  function answerMoney(q) {
+    for (const [pattern, fn] of MONEY_HANDLERS) {
+      const m = q.match(pattern);
+      if (m) { const reply = fn(m, q); if (reply) return reply; }
+    }
+    return null;
+  }
+
+  // Plain arithmetic goes back to the calculator's own Fraction engine.
+  function plainMath(q, helpers) {
+    const expr = q.replace(/\bplus\b/g, '+').replace(/\bminus\b/g, '-').replace(/\b(?:times|multiplied by|x)\b/g, '*').replace(/\b(?:divided by|over)\b/g, '/')
+      .replace(/[×·]/g, '*').replace(/÷/g, '/').replace(/[$,]/g, '').replace(/\s+/g, ' ').trim();
+    if (!/^[\d\s+\-*/().%^]+$/.test(expr) || !/\d/.test(expr)) return null;
+    const power = expr.match(/^(-?[\d.]+)\s*\^\s*(-?[\d.]+)$/);
+    if (power) { const value = Number(power[1]) ** Number(power[2]); return { answer: fmtNumber(value, 6), detail: `${power[1]}^${power[2]}`, extras: [], value }; }
+    if (expr.includes('^') || !helpers.math) return null;
+    let result;
+    try { result = helpers.math(expr); } catch (error) { return null; }
+    return { answer: result.text, detail: `${expr.replace(/\*/g, '×').replace(/\//g, '÷')} =`, extras: [], value: result.value };
+  }
+
+  on(/^(?:how many )?(days|weeks|hours|minutes) (?:are (?:there )?)?in (?:a |one |the )?(year|leap year)$/, m => {
+    const days = m[2] === 'leap year' ? 366 : 365;
+    const value = { days, weeks: days / 7, hours: days * 24, minutes: days * 1440 }[m[1]];
+    return { answer: m[1] === 'weeks' ? `52 weeks, ${days - 364} day${days - 364 === 1 ? '' : 's'}` : plural(value, m[1].slice(0, -1)), detail: `In a ${m[2]}`, extras: [['Days', String(days)], ['Hours', fmtNumber(days * 24)]] };
+  });
+
+  // ---- Time zones --------------------------------------------------------
+  const ZONES = {
+    'America/New_York': 'new york|nyc|new york city|boston|miami|atlanta|washington dc|washington|dc|philadelphia|philly|detroit|orlando|tampa|charlotte|pittsburgh|baltimore|florida|georgia|ohio|virginia|new jersey|eastern|eastern time|est|edt|et|toronto|montreal|ottawa|quebec',
+    'America/Chicago': 'chicago|dallas|houston|austin|san antonio|minneapolis|st louis|new orleans|nashville|memphis|kansas city|oklahoma city|milwaukee|omaha|des moines|texas|illinois|minnesota|missouri|central|central time|cst|cdt|ct|winnipeg',
+    'America/Denver': 'denver|salt lake city|salt lake|slc|utah|bountiful|ogden|provo|st george|colorado|boise|idaho|albuquerque|new mexico|wyoming|montana|el paso|mountain|mountain time|mst|mdt|mt|edmonton|calgary',
+    'America/Phoenix': 'phoenix|arizona|tucson|scottsdale|mesa|flagstaff',
+    'America/Los_Angeles': 'los angeles|la|san francisco|sf|san diego|seattle|portland|las vegas|vegas|sacramento|san jose|california|oregon|washington state|nevada|reno|pacific|pacific time|pst|pdt|pt|vancouver',
+    'America/Anchorage': 'anchorage|alaska|akst|akdt',
+    'Pacific/Honolulu': 'honolulu|hawaii|maui|hst',
+    'America/Mexico_City': 'mexico city|cdmx|mexico|guadalajara|monterrey',
+    'America/Cancun': 'cancun|tulum|playa del carmen',
+    'America/Bahia_Banderas': 'puerto vallarta|bahia de banderas|nuevo vallarta|sayulita',
+    'America/Mazatlan': 'cabo|cabo san lucas|los cabos|mazatlan',
+    'America/Costa_Rica': 'costa rica', 'America/Panama': 'panama', 'America/Jamaica': 'jamaica|kingston', 'America/Havana': 'havana|cuba',
+    'America/Santo_Domingo': 'dominican republic|punta cana|santo domingo', 'America/Puerto_Rico': 'puerto rico|san juan',
+    'America/Bogota': 'bogota|colombia', 'America/Lima': 'lima|peru', 'America/Sao_Paulo': 'sao paulo|rio|rio de janeiro|brazil|brasilia',
+    'America/Argentina/Buenos_Aires': 'buenos aires|argentina', 'America/Santiago': 'santiago|chile',
+    'America/Halifax': 'halifax|nova scotia', 'America/St_Johns': 'newfoundland|st johns', 'Atlantic/Reykjavik': 'iceland|reykjavik',
+    'UTC': 'utc|gmt|zulu|universal time|z',
+    'Europe/London': 'london|uk|united kingdom|england|britain|great britain|scotland|edinburgh|manchester|wales|dublin|ireland|lisbon|portugal|bst|british time|uk time',
+    'Europe/Paris': 'paris|france|berlin|germany|munich|frankfurt|madrid|spain|barcelona|rome|italy|milan|venice|florence|amsterdam|netherlands|brussels|belgium|vienna|austria|zurich|switzerland|geneva|stockholm|sweden|oslo|norway|copenhagen|denmark|prague|czech|czechia|warsaw|poland|budapest|hungary|cet|cest|central european|central europe|europe',
+    'Europe/Athens': 'athens|greece|helsinki|finland|kyiv|kiev|ukraine|bucharest|romania|sofia|bulgaria|eet|eest|eastern european',
+    'Europe/Istanbul': 'istanbul|turkey|ankara', 'Europe/Moscow': 'moscow|russia',
+    'Africa/Cairo': 'cairo|egypt', 'Africa/Johannesburg': 'johannesburg|south africa|cape town', 'Africa/Lagos': 'lagos|nigeria', 'Africa/Nairobi': 'nairobi|kenya', 'Africa/Casablanca': 'morocco|casablanca|marrakech',
+    'Asia/Dubai': 'dubai|uae|abu dhabi', 'Asia/Riyadh': 'riyadh|saudi arabia|saudi', 'Asia/Jerusalem': 'jerusalem|israel|tel aviv', 'Asia/Tehran': 'tehran|iran', 'Asia/Karachi': 'karachi|pakistan',
+    'Asia/Kolkata': 'india|mumbai|delhi|new delhi|bangalore|bengaluru|kolkata|chennai|hyderabad|ist|india time', 'Asia/Kathmandu': 'nepal|kathmandu', 'Asia/Dhaka': 'dhaka|bangladesh',
+    'Asia/Bangkok': 'bangkok|thailand|vietnam|hanoi|ho chi minh|saigon|jakarta|indonesia|bali|cambodia|phnom penh', 'Asia/Singapore': 'singapore|kuala lumpur|malaysia', 'Asia/Manila': 'manila|philippines',
+    'Asia/Shanghai': 'china|beijing|shanghai|shenzhen|guangzhou|hong kong|taipei|taiwan|macau', 'Asia/Tokyo': 'tokyo|japan|osaka|kyoto|jst|japan time', 'Asia/Seoul': 'seoul|korea|south korea|kst',
+    'Australia/Perth': 'perth|western australia', 'Australia/Adelaide': 'adelaide', 'Australia/Brisbane': 'brisbane|queensland', 'Australia/Sydney': 'sydney|melbourne|canberra|australia|aest|aedt',
+    'Pacific/Auckland': 'auckland|new zealand|nz|wellington|nzst|nzdt', 'Pacific/Fiji': 'fiji', 'Pacific/Tahiti': 'tahiti|bora bora'
+  };
+  const ZONE_ALIASES = new Map();
+  for (const [zone, names] of Object.entries(ZONES)) for (const name of names.split('|')) ZONE_ALIASES.set(name, zone);
+  const UPPERCASE_ALIASES = new Set(['est', 'edt', 'et', 'cst', 'cdt', 'ct', 'mst', 'mdt', 'mt', 'pst', 'pdt', 'pt', 'akst', 'akdt', 'hst', 'utc', 'gmt', 'bst', 'cet', 'cest', 'eet', 'eest', 'ist', 'jst', 'kst', 'aest', 'aedt', 'nzst', 'nzdt', 'uk', 'nyc', 'dc', 'la', 'sf', 'slc', 'uae', 'nz', 'cdmx', 'z']);
+  const localZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const HERE = () => ({ zone: localZone(), name: 'here' });
+
+  function findZone(text) {
+    const key = text.trim().replace(/^(?:in|at|for) /, '').replace(/\s+time$/, '').replace(/\./g, '').replace(/\s+/g, ' ');
+    if (/^(?:here|local|my time|local time|me|my zone|my timezone)$/.test(key)) return HERE();
+    const zone = ZONE_ALIASES.get(key);
+    if (zone) return { zone, name: UPPERCASE_ALIASES.has(key) ? key.toUpperCase() : key.replace(/\b\w/g, c => c.toUpperCase()) };
+    try {   // an IANA name typed directly, e.g. "asia/tokyo"
+      const iana = key.replace(/ /g, '_').replace(/\b\w/g, c => c.toUpperCase());
+      Intl.DateTimeFormat('en-US', { timeZone: iana });
+      return { zone: iana, name: iana.split('/').pop().replace(/_/g, ' ') };
+    } catch (error) { return null; }
+  }
+
+  function zoneParts(date, zone) {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: zone, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }).formatToParts(date);
+    const get = type => Number(parts.find(part => part.type === type).value);
+    return { year: get('year'), month: get('month'), day: get('day'), hour: get('hour') % 24, minute: get('minute'), second: get('second') };
+  }
+  // Minutes east of UTC for the zone at that instant.
+  function zoneOffset(date, zone) {
+    const p = zoneParts(date, zone);
+    return Math.round((Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - date.getTime()) / 60000);
+  }
+  // The instant at which the wall clock in the zone reads that date and time.
+  function instantFromWall(zone, year, month, day, hour, minute) {
+    const guess = Date.UTC(year, month, day, hour, minute);
+    const instant = guess - zoneOffset(new Date(guess), zone) * 60000;
+    return new Date(guess - zoneOffset(new Date(instant), zone) * 60000);
+  }
+  const offsetText = minutes => `UTC${minutes < 0 ? '-' : '+'}${Math.floor(Math.abs(minutes) / 60)}${Math.abs(minutes) % 60 ? `:${String(Math.abs(minutes) % 60).padStart(2, '0')}` : ''}`;
+  const clockText = (date, zone) => new Intl.DateTimeFormat('en-US', { timeZone: zone, hour: 'numeric', minute: '2-digit' }).format(date);
+  const dayText = (date, zone) => new Intl.DateTimeFormat('en-US', { timeZone: zone, weekday: 'short', month: 'short', day: 'numeric' }).format(date);
+  const abbrText = (date, zone) => (new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: 'short' }).formatToParts(date).find(part => part.type === 'timeZoneName') || {}).value || '';
+  // "MDT, UTC-6" for zones with a real abbreviation, just "UTC+9" where the browser only offers "GMT+9".
+  const zoneTag = (date, zone) => { const abbr = abbrText(date, zone); return /^(?:GMT|UTC)/.test(abbr) ? offsetText(zoneOffset(date, zone)) : `${abbr}, ${offsetText(zoneOffset(date, zone))}`; };
+  function hoursDiffText(minutes) {
+    if (minutes === 0) return 'Same time';
+    const abs = Math.abs(minutes);
+    return `${Math.floor(abs / 60)}${abs % 60 ? `:${String(abs % 60).padStart(2, '0')}` : ''} h ${minutes > 0 ? 'ahead' : 'behind'}`;
+  }
+
+  function timeInReply(target) {
+    const now = new Date(); const here = localZone();
+    const diff = zoneOffset(now, target.zone) - zoneOffset(now, here);
+    return { answer: clockText(now, target.zone), detail: `${dayText(now, target.zone)} · ${target.name === 'here' ? localZone().split('/').pop().replace(/_/g, ' ') : target.name} (${zoneTag(now, target.zone)})`,
+      extras: target.name === 'here' ? [['Zone', localZone()]] : [['Vs here', hoursDiffText(diff)], ['Here', clockText(now, here)], ['Date there', dayText(now, target.zone)]] };
+  }
+
+  function parseClock(text) {
+    const m = text.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?(?:\s*o'?clock)?$/);
+    if (!m || (!m[2] && !m[3])) return null;   // a bare number is not a time
+    let hour = Number(m[1]); const minute = Number(m[2] || 0); const meridiem = m[3] ? m[3][0] : null;
+    if (hour > 23 || minute > 59) return null;
+    if (meridiem === 'p' && hour < 12) hour += 12;
+    if (meridiem === 'a' && hour === 12) hour = 0;
+    return { hour, minute };
+  }
+
+  function convertTimeReply(clock, source, target) {
+    const src = zoneParts(new Date(), source.zone);
+    const instant = instantFromWall(source.zone, src.year, src.month - 1, src.day, clock.hour, clock.minute);
+    const tgt = zoneParts(instant, target.zone);
+    const dayShift = Math.round((Date.UTC(tgt.year, tgt.month - 1, tgt.day) - Date.UTC(src.year, src.month - 1, src.day)) / DAY_MS);
+    const diff = zoneOffset(instant, target.zone) - zoneOffset(instant, source.zone);
+    const sourceName = source.name === 'here' ? 'here' : `in ${source.name}`;
+    return { answer: `${clockText(instant, target.zone)}${dayShift ? ` (${dayShift > 0 ? 'next' : 'previous'} day)` : ''}`,
+      detail: `${clockText(instant, source.zone)} ${sourceName} → ${target.name === 'here' ? 'here' : target.name} (${zoneTag(instant, target.zone)})`,
+      extras: [['Difference', hoursDiffText(diff)], [target.name === 'here' ? 'Here' : target.name, offsetText(zoneOffset(instant, target.zone))], [source.name === 'here' ? 'Here' : source.name, offsetText(zoneOffset(instant, source.zone))]] };
+  }
+
+  const CLOCK_RE = "\\d{1,2}(?::\\d{2})?\\s*(?:am|pm|a\\.m\\.|p\\.m\\.)?(?:\\s*o'?clock)?";
+  function answerTime(q) {
+    let m;
+    if (/^(?:what )?(?:time|the time|current time|local time)(?: is it| now| right now| here)?$/.test(q)) return timeInReply(HERE());
+    m = q.match(new RegExp(`^(?:what time is |what is |convert )?(${CLOCK_RE})\\s+(?:(?:in|at|from)\\s+)?(.+?)(?:\\s+time)?\\s+(?:in|to|is what time in|->|=)\\s+(.+?)(?:\\s+time)?$`));
+    if (m) { const clock = parseClock(m[1]), source = findZone(m[2]), target = findZone(m[3]); if (clock && source && target) return convertTimeReply(clock, source, target); }
+    m = q.match(new RegExp(`^(?:what time is |what is |convert )?(${CLOCK_RE})\\s+(?:here\\s+)?(?:in|to|at|for)\\s+(.+?)(?:\\s+time)?$`));
+    if (m) { const clock = parseClock(m[1]), target = findZone(m[2]); if (clock && target) return convertTimeReply(clock, HERE(), target); }
+    m = q.match(new RegExp(`^(?:what time is |what is |convert )?(${CLOCK_RE})\\s+(.+?)(?:\\s+time)?\\s+(?:here|locally|local|my time|in my time)$`));
+    if (m) { const clock = parseClock(m[1]), source = findZone(m[2]); if (clock && source) return convertTimeReply(clock, source, HERE()); }
+    m = q.match(/^(?:what time is it|what time|what's the time|whats the time|current time|local time|the time|time)(?: is it)?(?: now| right now| currently)? (?:in|at|for|over in) (.+?)(?: (?:right )?now| currently)?$/);
+    if (m) { const target = findZone(m[1]); if (target) return timeInReply(target); }
+    m = q.match(/^(.+?) (?:current |local )?time(?: now| right now| currently)?$/);
+    if (m) { const target = findZone(m[1]); if (target) return timeInReply(target); }
+    return null;
+  }
+
+  // ---- Dispatcher ----------------------------------------------------------
+  const EXAMPLES = ['days until christmas', 'what day is thanksgiving', '3 weeks from today', 'days between june 1 and aug 15', 'how old is someone born 3/2/1985',
+    '5 miles in km', '72°f in c', 'cups in a gallon', '15% of 80', '20% off 45', 'tip 18% on 64.20', 'split 84 three ways', 'time in tokyo', '3pm in london', 'roll 2 dice'];
+
+  function normalize(question) {
+    return String(question).toLowerCase()
+      .replace(/[‘’′]/g, "'").replace(/[“”″]/g, '"').replace(/[–—]/g, '-')
+      .replace(/[?.]+$/g, '').replace(/(\D)!+$/, '$1').replace(/\s+/g, ' ').trim()
+      .replace(/^(?:hey |ok |okay |please |can you |could you |would you |tell me |show me |give me |i want to know |i need to know |i'd like to know |do you know |calculate |compute |find |figure out |work out )+/, '')
+      .replace(/ please$/, '')
+      .replace(/^what(?:'s|s| is| are| was| will be| would be| does) (?:the )?/, '')
+      .replace(/\bpercent(?:age)?\b/g, '%').replace(/\bpct\b/g, '%').replace(/(\d)\s*%/g, '$1%')
+      .replace(/\s+/g, ' ').trim();
+  }
+
+  function ask(question, helpers = {}) {
+    const q = normalize(question);
+    if (!q) fail('Type a question');
+    const reply = answerDates(q) || answerTime(q) || answerUnits(q) || answerMoney(q) || bareDate(q) || plainMath(q, helpers);
+    if (!reply) fail("Didn't understand that. Try one of the examples.");
+    return reply;
+  }
+
+  return { ask, EXAMPLES };
+})();
+</script>
+
+<script>
 (() => {
   'use strict';
 
@@ -898,7 +1829,9 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     input: '', evalInput: '', mode: 'standard', precision: 16,
     resultAsFeet: false, currentResult: null, repeatOperation: null,
     lastEquation: '', justCalculated: false, displayError: false,
-    currentDimension: 0
+    currentDimension: 0,
+    resultAsYards: false,   // FT tapped again on an area or volume: show sq yd / cu yd
+    lastAsk: null           // { question, answer, detail, extras } shown in Ask mode
   };
 
   const $ = id => document.getElementById(id);
@@ -909,9 +1842,10 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   const fractionBrowser = $('fractionBrowser'), fractionPalette = $('fractionPalette');
   const fractionPrev = $('fractionPrev'), fractionNext = $('fractionNext');
   const feetButton = $('feetButton'), inchesButton = $('inchesButton');
-  const modeToggle = $('modeToggle'), keypadStandard = $('keypadStandard');
+  const modeSwitch = $('modeSwitch'), keypadStandard = $('keypadStandard');
   const keypadMeasure = $('keypadMeasure'), toastElement = $('toast');
-  const memoryBank = $('memoryBank');
+  const memoryBank = $('memoryBank'), memoryTools = $('memoryTools');
+  const askPanel = $('askPanel'), askForm = $('askForm'), askInput = $('askInput'), askExamples = $('askExamples');
   const toastMessage = $('toastMessage'), toastAction = $('toastAction');
   const historyButton = $('historyButton'), historySheet = $('historySheet');
   const historyList = $('historyList'), historyClear = $('historyClear');
@@ -1235,8 +2169,16 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     return `${formatWithCommas(formatDecimalMeasurement(squareFeet))} sq ft`;
   }
 
+  function formatAreaSquareYards(fraction) { return `${formatDecimalMeasurement(fraction.div(new Fraction(1296n)))} sq yd`; }
   function formatVolumeCubicInches(fraction) { return `${formatDecimalMeasurement(fraction)} cu in`; }
   function formatVolumeCubicFeet(fraction) { return `${formatDecimalMeasurement(fraction.div(new Fraction(1728n)))} cu ft`; }
+  function formatVolumeCubicYards(fraction) { return `${formatDecimalMeasurement(fraction.div(new Fraction(46656n)))} cu yd`; }
+
+  // Bagged concrete yields about 0.60 cu ft per 80 lb bag and 0.45 per 60 lb bag.
+  function concreteBags(cubicInches, cubicFeetPerBag) {
+    const bags = cubicInches.div(new Fraction(1728n)).div(cubicFeetPerBag);
+    return bags.n <= 0n ? 0n : (bags.n + bags.d - 1n) / bags.d;
+  }
 
   // 1 in = 25.4 mm exactly, so the metric figures are exact until display rounding.
   const MM_PER_INCH = new Fraction(127n, 5n);
@@ -1264,8 +2206,9 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 
   function formatResult(fraction, mode = state.mode, dimension = state.currentDimension) {
     if (mode === 'standard' || dimension === 0) return formatWithCommas(formatDecimal(fraction));
-    if (dimension === 2) return state.resultAsFeet ? formatAreaSquareFeet(fraction) : formatAreaSquareInches(fraction);
-    if (dimension === 3) return state.resultAsFeet ? formatVolumeCubicFeet(fraction) : formatVolumeCubicInches(fraction);
+    const yards = state.resultAsFeet && state.resultAsYards;
+    if (dimension === 2) return yards ? formatAreaSquareYards(fraction) : state.resultAsFeet ? formatAreaSquareFeet(fraction) : formatAreaSquareInches(fraction);
+    if (dimension === 3) return yards ? formatVolumeCubicYards(fraction) : state.resultAsFeet ? formatVolumeCubicFeet(fraction) : formatVolumeCubicInches(fraction);
     if (dimension !== 1) return `${formatWithCommas(formatDecimal(fraction))} in^${dimension}`;
     return state.resultAsFeet ? formatFeetInches(fraction, state.precision) : `${formatMixedNumber(fraction, state.precision)}"`;
   }
@@ -1292,18 +2235,26 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
         ? [['Inches', `${formatMixedNumber(fraction, state.precision)} in`], ['Decimal ft', `${decimal(fraction.div(new Fraction(12n)))} ft`]]
         : [['Feet', formatFeetInches(fraction, state.precision)], ['Decimal in', `${decimal(fraction)} in`]];
     } else if (dimension === 2) {
+      const sqIn = ['Sq in', `${decimal(fraction, 2)} sq in`];
+      const sqFt = ['Sq ft', `${decimal(fraction.div(new Fraction(144n)), 2)} sq ft`];
+      const sqYd = ['Sq yd', `${decimal(fraction.div(new Fraction(1296n)), 2)} sq yd`];
+      const acres = ['Acres', `${decimal(fraction.div(new Fraction(6272640n)), 3)} ac`];
+      rows = !state.resultAsFeet ? [sqFt, sqYd] : state.resultAsYards ? [sqFt, acres] : [sqIn, sqYd];
+    } else if (state.resultAsFeet && state.resultAsYards) {
+      // Cubic yards is how concrete is ordered, so the row turns into ordering help.
       rows = [
-        state.resultAsFeet ? ['Sq in', `${decimal(fraction, 2)} sq in`] : ['Sq ft', `${decimal(fraction.div(new Fraction(144n)), 2)} sq ft`],
-        ['Sq yd', `${decimal(fraction.div(new Fraction(1296n)), 2)} sq yd`]
+        ['+10% waste', `${decimal(fraction.mul(new Fraction(11n, 10n)).div(new Fraction(46656n)), 2)} cu yd`],
+        ['80 lb bags', concreteBags(fraction, new Fraction(3n, 5n)).toString()],
+        ['60 lb bags', concreteBags(fraction, new Fraction(9n, 20n)).toString()]
       ];
     } else {
       // Board feet = thickness x width x length in inches / 144, on nominal sizes.
       rows = [
-        ['Board ft', `${decimal(fraction.div(new Fraction(144n)), 2)} bd ft`],
-        ['Cu yd', `${decimal(fraction.div(new Fraction(46656n)), 2)} cu yd`]
+        state.resultAsFeet ? ['Cu yd', `${decimal(fraction.div(new Fraction(46656n)), 2)} cu yd`] : ['Cu ft', `${decimal(fraction.div(new Fraction(1728n)), 2)} cu ft`],
+        ['Board ft', `${decimal(fraction.div(new Fraction(144n)), 2)} bd ft`]
       ];
     }
-    rows.push(['Metric', formatMetric(fraction, dimension)]);
+    if (rows.length < 3) rows.push(['Metric', formatMetric(fraction, dimension)]);
     rows.forEach(([label, value], index) => {
       conversionItems[index].querySelector('span').textContent = label;
       conversionItems[index].querySelector('strong').textContent = value;
@@ -1342,6 +2293,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     displayLabel.textContent = label || (kind === 'expression' ? 'Entering calculation' : 'Result');
     display.classList.toggle('expression', kind === 'expression');
     display.classList.toggle('error', kind === 'error');
+    display.classList.toggle('answer', kind === 'answer');
     state.displayError = kind === 'error';
     hideConversions();
     renderControlRow();
@@ -1350,6 +2302,11 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 
   function renderDisplay() {
     if (state.displayError) return;
+    if (state.mode === 'ask') {
+      if (state.lastAsk && state.lastAsk.answer) renderAnswer(state.lastAsk);
+      else setDisplay('Type a question', 'answer', 'Ask');
+      return;
+    }
     if (state.justCalculated && state.currentResult) { renderCalculatedResult(state.currentResult); return; }
     if (state.input) { setDisplay(state.input, 'expression'); return; }
     setDisplay('0', 'result', 'Ready');
@@ -1359,11 +2316,15 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     const isMeasure = state.mode === 'measure';
     const hasConvertibleResult = isMeasure && state.justCalculated && state.currentResult && state.currentDimension > 0;
     const power = hasConvertibleResult ? ({ 2: '²', 3: '³' })[state.currentDimension] || '' : '';
-    modeToggle.textContent = isMeasure ? 'Measure' : 'Standard';
-    modeToggle.classList.toggle('measure-active', isMeasure);
-    modeToggle.setAttribute('aria-pressed', String(isMeasure));
-    feetButton.innerHTML = power ? `FT${power}` : `FT <span>'</span>`;
+    const yards = Boolean(power && state.resultAsFeet && state.resultAsYards);
+    modeSwitch.querySelectorAll('[data-mode]').forEach(button => {
+      const active = button.dataset.mode === state.mode;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    feetButton.innerHTML = power ? `${yards ? 'YD' : 'FT'}${power}` : `FT <span>'</span>`;
     inchesButton.innerHTML = power ? `IN${power}` : `IN <span>&quot;</span>`;
+    feetButton.title = power && state.resultAsFeet ? (yards ? 'Tap for feet' : 'Tap again for yards') : '';
     const unitUnavailable = !isMeasure || (state.justCalculated && state.currentResult && state.currentDimension === 0);
     feetButton.disabled = unitUnavailable;
     inchesButton.disabled = unitUnavailable;
@@ -1408,12 +2369,14 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   }
 
   function renderMode() {
-    const isMeasure = state.mode === 'measure';
+    const isMeasure = state.mode === 'measure', isAsk = state.mode === 'ask';
     measureTools.hidden = !isMeasure;
     renderFractionPalette();
     fractionBrowser.hidden = !isMeasure;
-    keypadStandard.hidden = isMeasure;
+    keypadStandard.hidden = state.mode !== 'standard';
     keypadMeasure.hidden = !isMeasure;
+    askPanel.hidden = !isAsk;
+    memoryTools.hidden = isAsk;
     document.querySelectorAll('#precisionButtons button').forEach(button => {
       const active = Number(button.dataset.precision) === state.precision;
       button.classList.toggle('active', active);
@@ -1545,11 +2508,12 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     try {
       const lastCalculation = state.justCalculated && state.currentResult ? {
         numerator: state.currentResult.n.toString(), denominator: state.currentResult.d.toString(),
-        dimension: state.currentDimension, resultAsFeet: state.resultAsFeet, equation: state.lastEquation
+        dimension: state.currentDimension, resultAsFeet: state.resultAsFeet, resultAsYards: state.resultAsYards, equation: state.lastEquation
       } : null;
       const cutList = Object.fromEntries(Object.entries(cutFields).map(([key, input]) => [key, input.value]));
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        mode: state.mode, precision: state.precision, lastCalculation, scrapMemory, history: calcHistory, cutList
+        mode: state.mode, precision: state.precision, lastCalculation, scrapMemory, history: calcHistory, cutList,
+        lastAsk: state.lastAsk ? state.lastAsk.question : null
       }));
     } catch (error) { console.warn('Calculator state could not be saved.', error); }
   }
@@ -1559,7 +2523,10 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
       const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return;
       const parsed = JSON.parse(saved);
-      state.mode = parsed.mode === 'measure' ? 'measure' : 'standard';
+      state.mode = ['measure', 'ask'].includes(parsed.mode) ? parsed.mode : 'standard';
+      // Only the question is stored; the answer is worked out again on load so
+      // "days until christmas" stays current.
+      if (typeof parsed.lastAsk === 'string' && parsed.lastAsk) state.lastAsk = { question: parsed.lastAsk };
       state.precision = [8, 16, 32].includes(parsed.precision) ? parsed.precision : 16;
       if (Array.isArray(parsed.scrapMemory)) {
         scrapMemory = parsed.scrapMemory
@@ -1582,7 +2549,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
         const dimension = Number(last.dimension);
         if (Number.isInteger(dimension) && dimension >= 0 && dimension <= 3) {
           state.currentResult = new Fraction(BigInt(last.numerator), BigInt(last.denominator));
-          state.currentDimension = dimension; state.resultAsFeet = Boolean(last.resultAsFeet);
+          state.currentDimension = dimension; state.resultAsFeet = Boolean(last.resultAsFeet); state.resultAsYards = Boolean(last.resultAsYards);
           state.lastEquation = String(last.equation || ''); state.justCalculated = true;
           state.input = reusableResultText(state.currentResult);
           state.evalInput = encodeQuantity(state.currentResult, state.currentDimension);
@@ -1600,7 +2567,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     clearError();
     if (state.justCalculated) {
       state.input = ''; state.evalInput = ''; state.justCalculated = false;
-      state.repeatOperation = null; state.lastEquation = ''; state.resultAsFeet = false; state.currentDimension = 0;
+      state.repeatOperation = null; state.lastEquation = ''; state.resultAsFeet = false; state.resultAsYards = false; state.currentDimension = 0;
     }
   }
 
@@ -1681,7 +2648,11 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     if (state.mode !== 'measure') return;
     if (state.justCalculated && state.currentResult) {
       if (state.currentDimension === 0) return;
-      state.resultAsFeet = unit === 'feet';
+      if (unit === 'feet') {
+        // FT on an area or volume already in feet switches to yards; again goes back.
+        state.resultAsYards = state.resultAsFeet && state.currentDimension >= 2 && !state.resultAsYards;
+        state.resultAsFeet = true;
+      } else { state.resultAsFeet = false; state.resultAsYards = false; }
       state.input = reusableResultText(state.currentResult);
       state.evalInput = encodeQuantity(state.currentResult, state.currentDimension);
       const formatted = renderCalculatedResult(state.currentResult);
@@ -1726,7 +2697,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   function clearAll() {
     vibrate(); state.input = ''; state.evalInput = ''; state.currentResult = null;
     state.repeatOperation = null; state.lastEquation = ''; state.justCalculated = false;
-    state.displayError = false; state.resultAsFeet = false; state.currentDimension = 0;
+    state.displayError = false; state.resultAsFeet = false; state.resultAsYards = false; state.currentDimension = 0;
     setDisplay('0', 'result', 'Ready'); renderPendingOperator(); saveState();
   }
 
@@ -1808,7 +2779,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
         result = evaluated.value; state.currentDimension = evaluated.dimension;
         if (state.currentDimension < 0) throw new Error('This calculation creates an inverse measurement');
         if (state.currentDimension > 3) throw new Error('This calculator supports length, area and volume');
-        if (state.mode === 'measure' && !UNLABELED_QUANTITY_RE.test(evaluationExpression)) state.resultAsFeet = expression.includes("'");
+        if (state.mode === 'measure' && !UNLABELED_QUANTITY_RE.test(evaluationExpression)) { state.resultAsFeet = expression.includes("'"); state.resultAsYards = false; }
         state.repeatOperation = state.mode === 'standard' && tree.type === 'binary' ? { operator: tree.operator, rightNode: tree.right, label: nodeToDisplay(tree.right) } : null;
       }
       state.lastEquation = expression; state.currentResult = result;
@@ -1824,6 +2795,55 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     }
   }
 
+  // Ask mode. The engine (window.AskEngine, the script above) does the parsing;
+  // plain arithmetic is handed back here so it runs on the same Fraction maths.
+  function askQuestion(question, { record = true } = {}) {
+    const text = String(question || '').trim();
+    if (!text) return;
+    askInput.value = text;
+    let reply;
+    try {
+      reply = window.AskEngine.ask(text, {
+        math: expression => {
+          const value = evaluateNodeQuantity(buildTree(expression), 0).value;
+          return { value: value.toNumber(), text: formatWithCommas(formatDecimal(value)) };
+        }
+      });
+    } catch (error) {
+      state.lastAsk = null;
+      setDisplay(error.message || "Didn't understand that", 'error', 'Try another wording');
+      saveState();
+      return;
+    }
+    state.lastAsk = { question: text, ...reply };
+    renderAnswer(state.lastAsk);
+    if (record) {
+      calcHistory.unshift({ equation: text, n: '0', d: '1', dim: 0, label: reply.answer, ask: true });
+      calcHistory.length = Math.min(calcHistory.length, HISTORY_LIMIT);
+    }
+    saveState();
+  }
+
+  function renderAnswer(reply) {
+    setDisplay(reply.answer, 'answer', 'Answer');
+    resultEquation.textContent = reply.detail || '';
+    resultEquation.hidden = !reply.detail;
+    const extras = (reply.extras || []).slice(0, conversionItems.length);
+    conversionItems.forEach((item, index) => {
+      const [label = '', value = ''] = extras[index] || [];
+      item.querySelector('span').textContent = label;
+      item.querySelector('strong').textContent = value;
+    });
+    conversionResults.hidden = !extras.length;
+    scrollDisplayContentToEnd();
+  }
+
+  function renderAskExamples() {
+    askExamples.innerHTML = window.AskEngine.EXAMPLES
+      .map(question => `<button type="button" data-question="${escapeHTMLForTag(question)}">${escapeHTMLForTag(question)}</button>`)
+      .join('');
+  }
+
   function addHistoryEntry(equation, label, result) {
     calcHistory.unshift({ equation, ...storedQuantity(result, state.currentDimension, label) });
     calcHistory.length = Math.min(calcHistory.length, HISTORY_LIMIT);
@@ -1834,7 +2854,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     historyList.innerHTML = calcHistory.length
       ? calcHistory.map((entry, index) => `
           <li><button type="button" class="history-item" data-history-index="${index}">
-            <span>${escapeHTMLForTag(entry.equation)} =</span>
+            <span>${escapeHTMLForTag(entry.equation)}${entry.ask ? '' : ' ='}</span>
             <strong>${escapeHTMLForTag(entry.label)}</strong>
           </button></li>`).join('')
       : '<li class="sheet-empty">No calculations yet. Results appear here after you press =.</li>';
@@ -1952,12 +2972,13 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     }
   }
 
-  function switchMode(mode) {
-    if (!['standard', 'measure'].includes(mode) || mode === state.mode) return;
+  function switchMode(mode, { focusInput = false } = {}) {
+    if (!['standard', 'measure', 'ask'].includes(mode) || mode === state.mode) return;
     state.mode = mode; state.input = ''; state.evalInput = ''; state.currentResult = null;
     state.repeatOperation = null; state.lastEquation = ''; state.justCalculated = false;
-    state.displayError = false; state.resultAsFeet = false; state.currentDimension = 0;
+    state.displayError = false; state.resultAsFeet = false; state.resultAsYards = false; state.currentDimension = 0;
     renderAll(); saveState();
+    if (mode === 'ask' && focusInput) askInput.focus();
   }
 
   function handleKeypadClick(event) {
@@ -1981,8 +3002,9 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   }
 
   function handleKeyboard(event) {
-    // Typing in the cut list must not also type into the calculator.
+    // Typing in the cut list or the Ask box must not also type into the calculator.
     if (openSheet) { if (event.key === 'Escape') closeSheet(); return; }
+    if (event.target.matches?.('input, textarea')) return;
     if (event.target.closest?.('button') && (event.key === 'Enter' || event.key === ' ')) return;
     if (/^[0-9]$/.test(event.key)) addValue(event.key);
     else if (event.key === '.') addValue('.');
@@ -2043,7 +3065,11 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     if (!item) return;
     const entry = calcHistory[Number(item.dataset.historyIndex)];
     closeSheet();
-    if (entry) insertQuantity(entry);
+    if (!entry) return;
+    // A question is asked again rather than pasted, so "days until ..." stays current.
+    if (entry.ask) { switchMode('ask'); askQuestion(entry.equation); return; }
+    if (state.mode === 'ask') switchMode(entry.dim > 0 ? 'measure' : 'standard');
+    insertQuantity(entry);
   });
 
   cutListButton.addEventListener('click', openCutList);
@@ -2060,7 +3086,15 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     if (event.target === sheet || event.target.closest('[data-close-sheet]')) closeSheet();
   }));
 
-  modeToggle.addEventListener('click', () => switchMode(state.mode === 'standard' ? 'measure' : 'standard'));
+  modeSwitch.addEventListener('click', event => {
+    const button = event.target.closest('[data-mode]');
+    if (button) { vibrate(); switchMode(button.dataset.mode, { focusInput: true }); }
+  });
+  askForm.addEventListener('submit', event => { event.preventDefault(); askQuestion(askInput.value); });
+  askExamples.addEventListener('click', event => {
+    const chip = event.target.closest('[data-question]');
+    if (chip) { vibrate(); askQuestion(chip.dataset.question); }
+  });
   feetButton.addEventListener('click', () => useUnit('feet'));
   inchesButton.addEventListener('click', () => useUnit('inches'));
 
@@ -2089,7 +3123,9 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   document.addEventListener('keydown', handleKeyboard);
 
   loadState();
+  renderAskExamples();
   renderAll();
+  if (state.mode === 'ask' && state.lastAsk) askQuestion(state.lastAsk.question, { record: false });
 })();
 </script>
 </body>
