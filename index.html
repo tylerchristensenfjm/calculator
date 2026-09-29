@@ -534,6 +534,32 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 }
 
 .ask-form input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.ask-input-wrap { position: relative; min-width: 0; }
+.ask-input-wrap input { width: 100%; padding-right: 44px; }
+
+.ask-clear {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 50%;
+  background: var(--utility);
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.ask-input-wrap.has-text .ask-clear { display: grid; }
+.ask-clear:active { filter: brightness(0.85); }
 .ask-form input::placeholder { color: #5f645c; font-weight: 600; }
 
 .ask-form button {
@@ -985,7 +1011,10 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 
     <div class="ask-panel" id="askPanel" hidden aria-label="Ask a question">
       <form class="ask-form" id="askForm" autocomplete="off">
-        <input id="askInput" type="text" placeholder="days until christmas" enterkeyhint="go" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Question">
+        <div class="ask-input-wrap" id="askInputWrap">
+          <input id="askInput" type="text" placeholder="days until christmas" enterkeyhint="go" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Question">
+          <button type="button" class="ask-clear" id="askClear" aria-label="Clear the question">×</button>
+        </div>
         <button type="submit">Ask</button>
       </form>
       <p class="ask-examples-title" id="askExamplesTitle">Try one</p>
@@ -2005,6 +2034,7 @@ window.AskEngine = (() => {
   const toolSheet = $('toolSheet'), toolTitle = $('toolTitle'), toolFields = $('toolFields'), toolResult = $('toolResult'), toolHint = $('toolHint'), toolBack = $('toolBack');
   const moreButton = $('moreButton'), moreSheet = $('moreSheet'), backupButton = $('backupButton'), restoreButton = $('restoreButton');
   const restoreFile = $('restoreFile'), backupStatus = $('backupStatus'), askExamplesTitle = $('askExamplesTitle');
+  const askClear = $('askClear'), askInputWrap = $('askInputWrap');
 
   const HISTORY_LIMIT = 50;
   let scrapMemory = [];   // [{ n, d, dim, label }] - the exact value plus the text shown for it
@@ -2977,6 +3007,7 @@ window.AskEngine = (() => {
     const text = String(question || '').trim();
     if (!text) return;
     askInput.value = text;
+    syncAskClear();
     // "ans" (or "result") stands for the last numeric answer. In "ans in feet"
     // it keeps its unit; anywhere else it is just the number.
     let asked = text;
@@ -3024,6 +3055,9 @@ window.AskEngine = (() => {
   }
 
   function renderAskExamples() { renderAskSuggestions(); }
+
+  // The × in the question box shows only while there is something to clear.
+  function syncAskClear() { askInputWrap.classList.toggle('has-text', askInput.value.length > 0); }
 
   function addHistoryEntry(equation, label, result) {
     calcHistory.unshift({ equation, ...storedQuantity(result, state.currentDimension, label) });
@@ -3632,7 +3666,13 @@ window.AskEngine = (() => {
     if (button) { vibrate(); switchMode(button.dataset.mode, { focusInput: true }); }
   });
   askForm.addEventListener('submit', event => { event.preventDefault(); askQuestion(askInput.value); });
-  askInput.addEventListener('input', renderAskSuggestions);
+  askInput.addEventListener('input', () => { syncAskClear(); renderAskSuggestions(); });
+  askClear.addEventListener('click', () => {
+    vibrate();
+    askInput.value = '';
+    syncAskClear(); renderAskSuggestions();
+    askInput.focus();
+  });
   askExamples.addEventListener('click', event => {
     const chip = event.target.closest('[data-question]');
     if (chip) { vibrate(); askQuestion(chip.dataset.question); }
