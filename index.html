@@ -9,6 +9,9 @@
   <meta name="apple-mobile-web-app-title" content="Measure Calc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
   <title>Measure Calculator</title>
   <style>
 :root {
@@ -25,12 +28,49 @@
   --number-text: #161713;
   --operator: #363b34;
   --utility: #292d28;
+  --operator-text: #ffffff;
+  --label: #888d83;
+  --error: #ff8d82;
   --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
   --radius: 24px;
+  color-scheme: dark;
 }
 
+/* Light palette: on when the phone is in light mode (Theme = Auto) or Theme = Light. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --page: #ecebe3;
+    --panel: #ffffff;
+    --panel-2: #f1efe8;
+    --screen: #f8f7f2;
+    --border: #d6d3c7;
+    --text: #17150f;
+    --muted: #5f645c;
+    --accent: #c9a441;
+    --accent-strong: #7d600f;
+    --number: #ffffff;
+    --number-text: #161713;
+    --operator: #dcd8cc;
+    --operator-text: #17150f;
+    --utility: #e5e2d6;
+    --label: #6f746c;
+    --error: #b3261e;
+    --shadow: 0 24px 70px rgba(0, 0, 0, 0.12);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --page: #ecebe3; --panel: #ffffff; --panel-2: #f1efe8; --screen: #f8f7f2; --border: #d6d3c7; --text: #17150f; --muted: #5f645c;
+  --accent: #c9a441; --accent-strong: #7d600f; --number: #ffffff; --number-text: #161713; --operator: #dcd8cc; --operator-text: #17150f;
+  --utility: #e5e2d6; --label: #6f746c; --error: #b3261e; --shadow: 0 24px 70px rgba(0, 0, 0, 0.12); color-scheme: light;
+}
+
+/* Text size: Auto follows the iPhone's Dynamic Type setting; the others are fixed steps. */
+html[data-text="auto"] { font: -apple-system-body; }
+html[data-text="large"] { font-size: 115%; }
+html[data-text="larger"] { font-size: 130%; }
+
 * { box-sizing: border-box; }
-html { color-scheme: dark; }
 
 body {
   margin: 0;
@@ -73,7 +113,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 
 .control-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px 44px;
+  grid-template-columns: minmax(0, 1fr) 44px 44px 44px;
   gap: 8px;
   flex: 0 0 auto;
   padding: 10px 12px 8px;
@@ -122,13 +162,17 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   border-radius: 9px;
   background: transparent;
   color: var(--accent-strong);
+  font-size: 0.8rem;
   font-weight: 850;
-  letter-spacing: 0.03em;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
   cursor: pointer;
   touch-action: manipulation;
 }
 
 .mode-switch button.active { background: var(--accent); color: #17150f; }
+@media (min-width: 430px) { .mode-switch button { font-size: 0.9rem; } }
 
 /* FT and IN sit on the keypad beside =, styled like the fraction-slash key. */
 .key.unit-button {
@@ -212,7 +256,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   display: block;
   min-height: 15px;
   margin-bottom: 3px;
-  color: #888d83;
+  color: var(--label);
   font-size: 0.64rem;
   text-transform: uppercase;
   letter-spacing: 0.11em;
@@ -221,7 +265,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 .result-equation {
   min-height: 18px;
   margin: 1px 0 4px;
-  color: #9da198;
+  color: var(--muted);
   font-size: clamp(0.72rem, 2.8vw, 0.88rem);
   font-weight: 650;
   line-height: 1.25;
@@ -255,17 +299,20 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   cursor: copy;
-  touch-action: pan-x;
+  touch-action: none;   /* a horizontal swipe on the display is backspace */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .display::-webkit-scrollbar { display: none; }
 
 .display.expression {
-  color: #e2e0d8;
+  color: var(--text);
   font-size: clamp(1.2rem, 5.4vw, 1.8rem);
 }
 
-.display.error { color: #ff8d82; font-size: 1.05rem; }
+.display.error { color: var(--error); font-size: 1.05rem; }
+.result-equation.preview { color: var(--accent-strong); opacity: 0.8; }
 .display.answer { font-size: clamp(1.35rem, 6.4vw, 2.1rem); }
 
 .conversion-results {
@@ -294,7 +341,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 .conversion-item span {
   display: block;
   margin-bottom: 2px;
-  color: #888d83;
+  color: var(--label);
   font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -454,7 +501,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 .key:hover { filter: brightness(1.07); }
 .key:active { transform: translateY(1px); filter: brightness(0.9); }
 .key.number { background: var(--number); color: var(--number-text); }
-.key.operator { background: var(--operator); color: #fff; font-size: clamp(1.2rem, 5vw, 1.45rem); }
+.key.operator { background: var(--operator); color: var(--operator-text); font-size: clamp(1.2rem, 5vw, 1.45rem); }
 .key.utility { background: var(--utility); color: var(--text); }
 .key.measure-key { background: color-mix(in srgb, var(--accent) 22%, var(--utility)); color: var(--accent-strong); }
 .key.equals { background: var(--accent); color: #17150f; font-size: clamp(1.3rem, 5.3vw, 1.55rem); }
@@ -692,7 +739,70 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 .cut-details dt { color: var(--muted); font-size: 0.82rem; }
 .cut-details dd { margin: 0; font-weight: 750; text-align: right; }
 .cut-message { margin: 0; color: var(--muted); }
-.cut-message.error { color: #ff8d82; }
+.cut-message.error { color: var(--error); }
+
+.tool-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+
+.tool-item {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-2);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.tool-item:active { filter: brightness(0.9); }
+.tool-item strong { font-size: 1rem; font-weight: 800; color: var(--accent-strong); }
+.tool-item span { font-size: 0.78rem; color: var(--muted); }
+
+.setting { display: grid; gap: 6px; margin-bottom: 16px; }
+.setting > label { color: var(--muted); font-size: 0.7rem; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
+.setting .chips button.active { background: var(--accent); color: #17150f; border-color: var(--accent); }
+.setting p { margin: 0; font-size: 0.8rem; color: var(--muted); line-height: 1.45; }
+.setting-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.setting-actions .sheet-button { flex: 1 1 120px; min-height: 44px; }
+
+.stud-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.stud-marks span {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--panel-2);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.stud-marks span.sheet-edge { outline: 1px solid var(--accent); }
+
+.fraction-palette button.unit { background: color-mix(in srgb, var(--accent) 22%, var(--utility)); color: var(--accent-strong); font-size: 0.72rem; }
+
+/* Landscape phones and iPads: display on the left, keys on the right. */
+@media (min-width: 640px) and (orientation: landscape) {
+  .calculator-app { width: min(100%, 980px); }
+  .calculator-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+    column-gap: 10px;
+  }
+  .control-row { grid-column: 1 / -1; }
+  .measure-tools, .display-wrap, .memory-tools, .fraction-browser { grid-column: 1; }
+  .display-wrap { flex-basis: auto; height: auto; min-height: 200px; grid-template-rows: 15px 22px minmax(70px, 1fr) 50px; }
+  .keypad, .ask-panel { grid-column: 2; grid-row: 2 / -1; min-height: 0; margin: 0 10px 10px 0; border-radius: 16px; }
+  /* Rows shrink to fit the short screen instead of running off the bottom. */
+  .keypad-standard { grid-template-rows: repeat(5, minmax(0, 1fr)); }
+  .keypad-measure { grid-template-rows: repeat(6, minmax(0, 1fr)); }
+  .key { font-size: clamp(0.95rem, 2.2vw, 1.25rem); }
+}
 
 .sr-only {
   position: absolute;
@@ -767,8 +877,11 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
       <button type="button" class="control-button icon-button" id="historyButton" aria-label="History" title="History">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
       </button>
-      <button type="button" class="control-button icon-button" id="cutListButton" aria-label="Cut list" title="Cut list">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>
+      <button type="button" class="control-button icon-button" id="toolsButton" aria-label="Tools" title="Tools">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </button>
+      <button type="button" class="control-button icon-button" id="moreButton" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
       </button>
     </div>
 
@@ -875,7 +988,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
         <input id="askInput" type="text" placeholder="days until christmas" enterkeyhint="go" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Question">
         <button type="submit">Ask</button>
       </form>
-      <p class="ask-examples-title">Try one</p>
+      <p class="ask-examples-title" id="askExamplesTitle">Try one</p>
       <div class="chips" id="askExamples"></div>
     </div>
   </section>
@@ -895,46 +1008,71 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   </div>
 </div>
 
-<div class="sheet" id="cutSheet" hidden role="dialog" aria-modal="true" aria-labelledby="cutTitle">
+<div class="sheet" id="toolsSheet" hidden role="dialog" aria-modal="true" aria-labelledby="toolsTitle">
   <div class="sheet-panel" tabindex="-1">
     <div class="sheet-header">
-      <h2 id="cutTitle">Cut list</h2>
+      <h2 id="toolsTitle">Tools</h2>
       <button type="button" class="sheet-button" data-close-sheet>Done</button>
     </div>
     <div class="sheet-body">
-      <div class="cut-field">
-        <label for="cutBoard">Board length</label>
-        <input id="cutBoard" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="8'">
-        <div class="chips" data-for="board">
-          <button type="button" data-fill="8'">8'</button>
-          <button type="button" data-fill="10'">10'</button>
-          <button type="button" data-fill="12'">12'</button>
-          <button type="button" data-fill="16'">16'</button>
-          <button type="button" data-fill-result>Use result</button>
+      <ul class="tool-list" id="toolList"></ul>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="toolSheet" hidden role="dialog" aria-modal="true" aria-labelledby="toolTitle">
+  <div class="sheet-panel" tabindex="-1">
+    <div class="sheet-header">
+      <button type="button" class="sheet-button" id="toolBack" aria-label="Back to the tool list">&lsaquo; Tools</button>
+      <h2 id="toolTitle">Tool</h2>
+      <button type="button" class="sheet-button" data-close-sheet>Done</button>
+    </div>
+    <div class="sheet-body">
+      <div id="toolFields"></div>
+      <div class="cut-result" id="toolResult" aria-live="polite"></div>
+      <p class="sheet-hint" id="toolHint"></p>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="moreSheet" hidden role="dialog" aria-modal="true" aria-labelledby="moreTitle">
+  <div class="sheet-panel" tabindex="-1">
+    <div class="sheet-header">
+      <h2 id="moreTitle">Settings</h2>
+      <button type="button" class="sheet-button" data-close-sheet>Done</button>
+    </div>
+    <div class="sheet-body">
+      <div class="setting">
+        <label>Theme</label>
+        <div class="chips" data-setting="theme">
+          <button type="button" data-value="auto">Match iPhone</button>
+          <button type="button" data-value="dark">Dark</button>
+          <button type="button" data-value="light">Light</button>
         </div>
       </div>
-      <div class="cut-field">
-        <label for="cutPiece">Piece length</label>
-        <input id="cutPiece" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="22 1/2&quot;">
-        <div class="chips" data-for="piece">
-          <button type="button" data-fill-result>Use result</button>
+      <div class="setting">
+        <label>Text size</label>
+        <div class="chips" data-setting="text">
+          <button type="button" data-value="normal">Normal</button>
+          <button type="button" data-value="auto">Match iPhone</button>
+          <button type="button" data-value="large">Large</button>
+          <button type="button" data-value="larger">Larger</button>
         </div>
       </div>
-      <div class="cut-field">
-        <label for="cutKerf">Blade kerf</label>
-        <input id="cutKerf" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="1/8&quot;">
-        <div class="chips" data-for="kerf">
-          <button type="button" data-fill="1/8&quot;">1/8" standard</button>
-          <button type="button" data-fill="3/32&quot;">3/32" thin</button>
-          <button type="button" data-fill="0">None</button>
+      <div class="setting">
+        <label>Backup</label>
+        <p>Scraps, history, tool entries and settings live only in this browser. Save a backup before switching phones or clearing Safari.</p>
+        <div class="setting-actions">
+          <button type="button" class="sheet-button" id="backupButton">Save backup</button>
+          <button type="button" class="sheet-button" id="restoreButton">Restore from file</button>
         </div>
+        <input type="file" id="restoreFile" accept="application/json,.json" hidden>
+        <p id="backupStatus"></p>
       </div>
-      <div class="cut-field">
-        <label for="cutQty">Pieces needed (optional)</label>
-        <input id="cutQty" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+      <div class="setting">
+        <label>About</label>
+        <p>Measure Calculator. Everything runs on this device; nothing is sent anywhere.</p>
       </div>
-      <div class="cut-result" id="cutResult" aria-live="polite"></div>
-      <p class="sheet-hint">Use ' for feet and " for inches (8', 22 1/2", 7' 3 1/4"), or type ft and in. A plain number counts as inches.</p>
     </div>
   </div>
 </div>
@@ -1488,7 +1626,8 @@ window.AskEngine = (() => {
     const result = convertValue(value, from, to);
     const extras = POPULAR[from.category].map(name => UNIT_ALIASES.get(name)).filter(unit => unit !== from && unit !== to).slice(0, 3)
       .map(unit => [unit.plural, quantityText(convertValue(value, from, unit), unit)]);
-    return { answer: quantityText(result, to), detail: `${quantityText(value, from)} in ${to.plural}`, extras, value: result };
+    // ansText keeps the unit, so a follow-up "ans in feet" can convert again.
+    return { answer: quantityText(result, to), detail: `${quantityText(value, from)} in ${to.plural}`, extras, value: result, ansText: `${result} ${to.plural}` };
   }
 
   const NUMBER_RE = '-?\\$?[\\d,]*\\.?\\d+';
@@ -1757,6 +1896,17 @@ window.AskEngine = (() => {
   // ---- Dispatcher ----------------------------------------------------------
   const EXAMPLES = ['days until christmas', 'what day is thanksgiving', '3 weeks from today', 'days between june 1 and aug 15', 'how old is someone born 3/2/1985',
     '5 miles in km', '72°f in c', 'cups in a gallon', '15% of 80', '20% off 45', 'tip 18% on 64.20', 'split 84 three ways', 'time in tokyo', '3pm in london', 'roll 2 dice'];
+  // Phrasings offered as you type. Each one is known to work.
+  const SUGGESTIONS = [...EXAMPLES,
+    'days until thanksgiving', 'days until new years', 'days until easter', 'days until halloween', 'days until pioneer day', 'days until labor day', 'days until memorial day',
+    'days until july 4', 'days until march 3', 'days until the 15th', 'days since jan 1', 'weeks until christmas', 'months until christmas', 'hours until christmas',
+    'what day is christmas', 'what day is july 4 2027', 'what day was 1985-03-02', 'when is easter 2027', 'when is mothers day', 'when is fathers day', 'when does dst end',
+    'next friday', 'last monday', 'in 45 days', '90 days after march 3', '2 weeks before christmas', 'days between march 3 and june 14', 'business days until christmas',
+    'fridays until christmas', 'days left in the year', 'days left in the month', 'days in february 2028', 'is 2028 a leap year', 'next leap year', 'what week is it', 'day of the year',
+    'born in 1985', '10 km in miles', '100 c to f', '3 cups in ml', 'feet in a mile', '180 lb in kg', `5'10" in cm`, '2 acres in sq ft', '60 mph in kph', '35 psi in bar',
+    '1 cu yd in cu ft', '30 mpg in l/100km', '500 gb in tb', '3 weeks in days', '80 plus 8.5% tax', 'what percent is 30 of 120', 'percent change from 50 to 65', 'half of 90',
+    '12 squared', 'sqrt 144', '2^10', 'average of 3, 5, 9', 'time in london', 'time in new york', '9am est in mst', '15:00 in sydney', 'flip a coin', 'random number between 1 and 100',
+    'ans in cm', '15% of ans', 'ans squared'];
 
   function normalize(question) {
     return String(question).toLowerCase()
@@ -1777,7 +1927,7 @@ window.AskEngine = (() => {
     return reply;
   }
 
-  return { ask, EXAMPLES };
+  return { ask, EXAMPLES, SUGGESTIONS };
 })();
 </script>
 
@@ -1831,7 +1981,9 @@ window.AskEngine = (() => {
     lastEquation: '', justCalculated: false, displayError: false,
     currentDimension: 0,
     resultAsYards: false,   // FT tapped again on an area or volume: show sq yd / cu yd
-    lastAsk: null           // { question, answer, detail, extras } shown in Ask mode
+    lastAsk: null,          // { question, answer, detail, extras, value } shown in Ask mode
+    tools: {},              // what was typed into each tool, by tool id
+    settings: { theme: 'auto', text: 'normal' }
   };
 
   const $ = id => document.getElementById(id);
@@ -1849,8 +2001,10 @@ window.AskEngine = (() => {
   const toastMessage = $('toastMessage'), toastAction = $('toastAction');
   const historyButton = $('historyButton'), historySheet = $('historySheet');
   const historyList = $('historyList'), historyClear = $('historyClear');
-  const cutListButton = $('cutListButton'), cutSheet = $('cutSheet'), cutResult = $('cutResult');
-  const cutFields = { board: $('cutBoard'), piece: $('cutPiece'), kerf: $('cutKerf'), qty: $('cutQty') };
+  const toolsButton = $('toolsButton'), toolsSheet = $('toolsSheet'), toolList = $('toolList');
+  const toolSheet = $('toolSheet'), toolTitle = $('toolTitle'), toolFields = $('toolFields'), toolResult = $('toolResult'), toolHint = $('toolHint'), toolBack = $('toolBack');
+  const moreButton = $('moreButton'), moreSheet = $('moreSheet'), backupButton = $('backupButton'), restoreButton = $('restoreButton');
+  const restoreFile = $('restoreFile'), backupStatus = $('backupStatus'), askExamplesTitle = $('askExamplesTitle');
 
   const HISTORY_LIMIT = 50;
   let scrapMemory = [];   // [{ n, d, dim, label }] - the exact value plus the text shown for it
@@ -1907,6 +2061,9 @@ window.AskEngine = (() => {
   const FEET_LITERAL_RE = new RegExp(String.raw`^(${NUMERIC_LITERAL})\s*'(?:\s*(${NUMERIC_LITERAL})\s*")?`);
   const INCH_LITERAL_RE = new RegExp(String.raw`^(${NUMERIC_LITERAL})\s*"`);
   const PLAIN_LITERAL_RE = new RegExp(String.raw`^(${NUMERIC_LITERAL})`);
+  // Metric entry in Measure mode: 450mm, 2.5cm, 1.2m. 1 in = 25.4 mm exactly.
+  const METRIC_LITERAL_RE = new RegExp(String.raw`^(${NUMERIC_LITERAL})\s*(mm|cm|m)(?![a-z])`);
+  const INCHES_PER_METRIC = { mm: new Fraction(5n, 127n), cm: new Fraction(50n, 127n), m: new Fraction(5000n, 127n) };
   // An exact value spliced into the expression. A calculated result has no
   // label and only ever starts the expression; a recalled scrap or history
   // value carries the text shown for it, so backspace can remove it whole.
@@ -1935,6 +2092,12 @@ window.AskEngine = (() => {
       if (character === '(' || character === ')') { tokens.push({ type: 'paren', value: character }); index += 1; continue; }
       if ('+-*/%'.includes(character)) { tokens.push({ type: 'operator', value: character }); index += 1; continue; }
       if (/\d|\./.test(character)) {
+        const metricMatch = remaining.match(METRIC_LITERAL_RE);
+        if (metricMatch) {
+          tokens.push({ type: 'number', value: parseNumericLiteral(metricMatch[1]).mul(INCHES_PER_METRIC[metricMatch[2]]), dimension: 1, fixedDimension: true });
+          index += metricMatch[0].length;
+          continue;
+        }
         const feetMatch = remaining.match(FEET_LITERAL_RE);
         if (feetMatch) {
           const feet = parseNumericLiteral(feetMatch[1]);
@@ -2289,6 +2452,7 @@ window.AskEngine = (() => {
   function setDisplay(text, kind = 'result', label = '') {
     resultEquation.hidden = true;
     resultEquation.textContent = '';
+    resultEquation.classList.remove('preview');
     display.textContent = text || '0';
     displayLabel.textContent = label || (kind === 'expression' ? 'Entering calculation' : 'Result');
     display.classList.toggle('expression', kind === 'expression');
@@ -2308,7 +2472,7 @@ window.AskEngine = (() => {
       return;
     }
     if (state.justCalculated && state.currentResult) { renderCalculatedResult(state.currentResult); return; }
-    if (state.input) { setDisplay(state.input, 'expression'); return; }
+    if (state.input) { setDisplay(state.input, 'expression'); renderPreview(); return; }
     setDisplay('0', 'result', 'Ready');
   }
 
@@ -2363,7 +2527,8 @@ window.AskEngine = (() => {
 
   function renderFractionPalette() {
     const labels = buildFractionLabels(state.precision);
-    fractionPalette.innerHTML = labels.map(label => `<button type="button" data-fraction="${label}">${label}</button>`).join('');
+    fractionPalette.innerHTML = labels.map(label => `<button type="button" data-fraction="${label}">${label}</button>`).join('')
+      + ['mm', 'cm', 'm'].map(unit => `<button type="button" class="unit" data-unit="${unit}" title="Metric ${unit}">${unit}</button>`).join('');
     fractionPalette.scrollLeft = 0;
     requestAnimationFrame(updateFractionNavigation);
   }
@@ -2510,10 +2675,9 @@ window.AskEngine = (() => {
         numerator: state.currentResult.n.toString(), denominator: state.currentResult.d.toString(),
         dimension: state.currentDimension, resultAsFeet: state.resultAsFeet, resultAsYards: state.resultAsYards, equation: state.lastEquation
       } : null;
-      const cutList = Object.fromEntries(Object.entries(cutFields).map(([key, input]) => [key, input.value]));
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        mode: state.mode, precision: state.precision, lastCalculation, scrapMemory, history: calcHistory, cutList,
-        lastAsk: state.lastAsk ? state.lastAsk.question : null
+        mode: state.mode, precision: state.precision, lastCalculation, scrapMemory, history: calcHistory,
+        tools: state.tools, settings: state.settings, lastAsk: state.lastAsk ? state.lastAsk.question : null
       }));
     } catch (error) { console.warn('Calculator state could not be saved.', error); }
   }
@@ -2539,10 +2703,12 @@ window.AskEngine = (() => {
           .filter(entry => isStoredQuantity(entry) && typeof entry.equation === 'string')
           .slice(0, HISTORY_LIMIT);
       }
-      if (parsed.cutList && typeof parsed.cutList === 'object') {
-        for (const [key, input] of Object.entries(cutFields)) {
-          if (typeof parsed.cutList[key] === 'string') input.value = parsed.cutList[key];
-        }
+      if (parsed.tools && typeof parsed.tools === 'object') state.tools = parsed.tools;
+      // The cut list used to keep its fields at the top level.
+      if (parsed.cutList && typeof parsed.cutList === 'object' && !state.tools.cut) state.tools.cut = { ...parsed.cutList };
+      if (parsed.settings && typeof parsed.settings === 'object') {
+        if (['auto', 'dark', 'light'].includes(parsed.settings.theme)) state.settings.theme = parsed.settings.theme;
+        if (['normal', 'auto', 'large', 'larger'].includes(parsed.settings.text)) state.settings.text = parsed.settings.text;
       }
       const last = parsed.lastCalculation;
       if (last && /^-?\d+$/.test(String(last.numerator)) && /^\d+$/.test(String(last.denominator))) {
@@ -2641,6 +2807,16 @@ window.AskEngine = (() => {
       state.input += '/'; state.evalInput += '/'; state.justCalculated = false;
       renderDisplay(); saveState();
     }
+  }
+
+  // "mm", "cm" or "m" after a typed number; the tokenizer turns it into inches.
+  function addMetricUnit(unit) {
+    vibrate(); clearError();
+    if (state.mode !== 'measure') return;
+    prepareForFreshValue();
+    if (!/\d$/.test(state.input.trim()) || !/\d$/.test(state.evalInput.trim())) return;
+    state.input += unit; state.evalInput += unit; state.justCalculated = false;
+    renderDisplay(); renderControlRow(); saveState();
   }
 
   function useUnit(unit) {
@@ -2801,18 +2977,27 @@ window.AskEngine = (() => {
     const text = String(question || '').trim();
     if (!text) return;
     askInput.value = text;
+    // "ans" (or "result") stands for the last numeric answer. In "ans in feet"
+    // it keeps its unit; anywhere else it is just the number.
+    let asked = text;
+    const ANS_RE = /\b(?:last result|previous result|ans|answer|result)\b/gi;
+    if (ANS_RE.test(text)) {
+      const last = state.lastAsk && Number.isFinite(state.lastAsk.value) ? state.lastAsk : null;
+      if (!last) { setDisplay('No previous number to use as ans', 'error', 'Ask something with a number first'); return; }
+      const converting = /\b(?:ans|answer|result)\s+(?:in|to|as|into)\s+/i.test(text) && last.ansText;
+      asked = text.replace(ANS_RE, converting ? last.ansText : String(last.value));
+    }
     let reply;
     try {
-      reply = window.AskEngine.ask(text, {
+      reply = window.AskEngine.ask(asked, {
         math: expression => {
           const value = evaluateNodeQuantity(buildTree(expression), 0).value;
           return { value: value.toNumber(), text: formatWithCommas(formatDecimal(value)) };
         }
       });
     } catch (error) {
-      state.lastAsk = null;
+      // The last good answer stays available for "ans".
       setDisplay(error.message || "Didn't understand that", 'error', 'Try another wording');
-      saveState();
       return;
     }
     state.lastAsk = { question: text, ...reply };
@@ -2838,11 +3023,7 @@ window.AskEngine = (() => {
     scrollDisplayContentToEnd();
   }
 
-  function renderAskExamples() {
-    askExamples.innerHTML = window.AskEngine.EXAMPLES
-      .map(question => `<button type="button" data-question="${escapeHTMLForTag(question)}">${escapeHTMLForTag(question)}</button>`)
-      .join('');
-  }
+  function renderAskExamples() { renderAskSuggestions(); }
 
   function addHistoryEntry(equation, label, result) {
     calcHistory.unshift({ equation, ...storedQuantity(result, state.currentDimension, label) });
@@ -2909,53 +3090,387 @@ window.AskEngine = (() => {
     return Boolean(state.justCalculated && state.currentResult && state.currentDimension === 1);
   }
 
-  function showCutMessage(message, isError = false) {
-    cutResult.innerHTML = `<p class="cut-message${isError ? ' error' : ''}">${escapeHTMLForTag(message)}</p>`;
-  }
+  // ---- Tools ---------------------------------------------------------------
+  // A tool is a list of fields plus compute(values) -> { main: [big, caption],
+  // rows: [[label, value], ...], marks?, note? }. Lengths arrive as Fractions
+  // of an inch, numbers as JS numbers, choices as their value string. What is
+  // typed into each tool is kept in state.tools so it is there next time.
+  const F = n => new Fraction(BigInt(n));
+  const toNum = fraction => fraction.toNumber();
+  // Back to a fraction (64ths are finer than any display precision) so a
+  // computed number can be shown as feet and inches.
+  const fromNum = value => new Fraction(BigInt(Math.round(value * 64)), 64n);
+  const inches = fraction => formatFeetInches(fraction, state.precision);
+  const inchesOnly = fraction => `${formatMixedNumber(fraction, state.precision)}"`;
+  const ceilNum = value => Math.ceil(value - 1e-9);
+  const sqftText = squareInches => `${(squareInches / 144).toLocaleString('en-US', { maximumFractionDigits: 1 })} sq ft`;
+  const gentle = message => Object.assign(new Error(message), { gentle: true });
 
-  // Each piece costs its length plus one saw kerf; the last piece needs no cut
-  // when it ends exactly at the end of the board.
-  function renderCutList() {
-    let board; let piece; let kerf; let needed = null;
-    try {
-      board = parseLengthField(cutFields.board.value, 'Board length');
-      piece = parseLengthField(cutFields.piece.value, 'Piece length');
-      kerf = parseLengthField(cutFields.kerf.value, 'Blade kerf', true) || new Fraction(0n);
-      const quantityText = cutFields.qty.value.trim();
-      if (quantityText) {
-        if (!/^\d+$/.test(quantityText) || BigInt(quantityText) === 0n) throw new Error('Pieces needed must be a whole number');
-        needed = BigInt(quantityText);
+  const TOOLS = [
+    {
+      id: 'cut', title: 'Cut list', blurb: 'Pieces per board, offcut, boards needed',
+      hint: `Use ' for feet and " for inches (8', 22 1/2", 7' 3 1/4"), or type ft and in. A plain number counts as inches.`,
+      fields: [
+        { key: 'board', label: 'Board length', type: 'length', placeholder: "8'", chips: ["8'", "10'", "12'", "16'"], useResult: true },
+        { key: 'piece', label: 'Piece length', type: 'length', placeholder: '22 1/2"', useResult: true },
+        { key: 'kerf', label: 'Blade kerf', type: 'length', value: '1/8"', chips: ['1/8"', '3/32"', '0'], allowZero: true },
+        { key: 'qty', label: 'Pieces needed (optional)', type: 'count', optional: true }
+      ],
+      // Each piece costs its length plus one saw kerf; the last piece needs no cut
+      // when it ends exactly at the end of the board.
+      compute: ({ board, piece, kerf, qty }) => {
+        const perCut = piece.add(kerf);
+        const fit = board.add(kerf).div(perCut);
+        const perBoard = fit.n / fit.d;
+        if (perBoard === 0n) throw new Error('The piece is longer than the board.');
+        const offcutAfter = pieces => { const left = board.sub(perCut.mul(F(pieces))); return left.n < 0n ? F(0) : left; };
+        const lengthText = value => value.n === 0n ? 'None' : inches(value);
+        const rows = [['Offcut per board', lengthText(offcutAfter(perBoard))]];
+        if (qty) {
+          const needed = BigInt(qty); const boards = (needed + perBoard - 1n) / perBoard; const lastPieces = needed - (boards - 1n) * perBoard;
+          rows.push(['Boards needed', boards.toString()]);
+          if (lastPieces !== perBoard) rows.push(['Last board', `${lastPieces} ${lastPieces === 1n ? 'piece' : 'pieces'}, ${lengthText(offcutAfter(lastPieces))} left`]);
+        }
+        return { main: [perBoard.toString(), perBoard === 1n ? 'piece per board' : 'pieces per board'], rows };
       }
-    } catch (error) { showCutMessage(error.message, true); return; }
-    if (!board || !piece) { showCutMessage('Enter a board length and a piece length.'); return; }
-
-    const perCut = piece.add(kerf);
-    const fit = board.add(kerf).div(perCut);
-    const perBoard = fit.n / fit.d;
-    if (perBoard === 0n) { showCutMessage('The piece is longer than the board.', true); return; }
-    const offcutAfter = pieces => {
-      const left = board.sub(perCut.mul(new Fraction(pieces)));
-      return left.n < 0n ? new Fraction(0n) : left;
-    };
-    const lengthText = value => value.n === 0n ? 'None' : formatFeetInches(value, state.precision);
-    const plural = count => `${count} ${count === 1n ? 'piece' : 'pieces'}`;
-
-    const rows = [['Offcut per board', lengthText(offcutAfter(perBoard))]];
-    if (needed) {
-      const boards = (needed + perBoard - 1n) / perBoard;
-      const lastPieces = needed - (boards - 1n) * perBoard;
-      rows.push(['Boards needed', boards.toString()]);
-      if (lastPieces !== perBoard) rows.push(['Last board', `${plural(lastPieces)}, ${lengthText(offcutAfter(lastPieces))} left`]);
+    },
+    {
+      id: 'stairs', title: 'Stairs', blurb: 'Risers, treads and stringer length from the total rise',
+      hint: 'IRC limits: risers up to 7 3/4", treads at least 10", all risers within 3/8" of each other. Total rise is finished floor to finished floor. Check local code.',
+      fields: [
+        { key: 'rise', label: 'Total rise', type: 'length', placeholder: `9' 1"`, useResult: true },
+        { key: 'run', label: 'Total run available (optional)', type: 'length', optional: true },
+        { key: 'maxRiser', label: 'Maximum riser height', type: 'length', value: '7 3/4"', chips: ['7 3/4"', '7 1/2"', '7"', '6 1/2"'] },
+        { key: 'tread', label: 'Tread depth', type: 'length', value: '10"', chips: ['10"', '10 1/2"', '11"'] }
+      ],
+      compute: ({ rise, run, maxRiser, tread }) => {
+        const riseIn = toNum(rise), risers = ceilNum(riseIn / toNum(maxRiser)), treads = risers - 1;
+        if (treads < 1) throw new Error('That rise needs only one step.');
+        const riserHeight = rise.div(F(risers));
+        const treadDepth = run ? run.div(F(treads)) : tread;
+        const totalRun = treadDepth.mul(F(treads));
+        const stringer = fromNum(Math.hypot(riseIn, toNum(totalRun)));
+        const angle = Math.atan2(riseIn, toNum(totalRun)) * 180 / Math.PI;
+        const comfort = 2 * toNum(riserHeight) + toNum(treadDepth);
+        const notes = [];
+        if (toNum(treadDepth) < 10) notes.push('Tread is under 10".');
+        if (toNum(riserHeight) > 7.75) notes.push('Riser is over 7 3/4".');
+        if (comfort < 24 || comfort > 25) notes.push(`Comfort rule is off (2 × riser + tread = ${comfort.toFixed(1)}", aim for 24–25").`);
+        return { main: [String(risers), `risers · ${treads} treads`], rows: [['Riser height', inchesOnly(riserHeight)], ['Tread depth', inchesOnly(treadDepth)], ['Total run', inches(totalRun)], ['Stringer length', inches(stringer)], ['Stair angle', `${angle.toFixed(1)}°`]], note: notes.join(' ') };
+      }
+    },
+    {
+      id: 'rafter', title: 'Roof pitch & rafters', blurb: 'Rise, rafter length and cut angles from run and pitch',
+      hint: 'Run is horizontal, from the outside of the wall to the center of the ridge. Line length runs to the ridge center, so shorten it by half the ridge thickness. Overhang is measured horizontally.',
+      fields: [
+        { key: 'run', label: 'Run', type: 'length', placeholder: `12' 6"`, useResult: true },
+        { key: 'pitch', label: 'Pitch (inches of rise per 12")', type: 'number', value: '6', chips: ['3', '4', '6', '8', '10', '12'] },
+        { key: 'rise', label: 'Rise (optional, overrides pitch)', type: 'length', optional: true },
+        { key: 'overhang', label: 'Overhang (optional)', type: 'length', optional: true }
+      ],
+      compute: ({ run, pitch, rise, overhang }) => {
+        const runIn = toNum(run);
+        const riseIn = rise ? toNum(rise) : runIn * pitch / 12;
+        const pitchValue = rise ? riseIn / runIn * 12 : pitch;
+        const factor = Math.hypot(12, pitchValue) / 12;   // rafter length per unit of run
+        const rafter = runIn * factor;
+        const angle = Math.atan2(pitchValue, 12) * 180 / Math.PI;
+        const rows = [['Rise', inches(fromNum(riseIn))], ['Pitch', `${pitchValue.toLocaleString('en-US', { maximumFractionDigits: 2 })} / 12`], ['Roof angle', `${angle.toFixed(1)}°`], ['Plumb cut · seat cut', `${angle.toFixed(1)}° · ${(90 - angle).toFixed(1)}°`], ['Rafter per foot of run', `${(factor * 12).toFixed(3)}"`]];
+        if (overhang) rows.push(['With overhang', inches(fromNum(rafter + toNum(overhang) * factor))], ['Overhang drop', inches(fromNum(toNum(overhang) * pitchValue / 12))]);
+        return { main: [inches(fromNum(rafter)), 'rafter line length'], rows };
+      }
+    },
+    {
+      id: 'diagonal', title: 'Diagonal & square', blurb: 'Diagonal of a rectangle and a squareness check',
+      hint: `If both diagonals of a layout match, it is square. 3-4-5 check: mark 3' along one side and 4' along the other; the diagonal between the marks should be exactly 5'.`,
+      fields: [
+        { key: 'a', label: 'Side A', type: 'length', placeholder: `10'`, useResult: true },
+        { key: 'b', label: 'Side B', type: 'length', placeholder: `12'` },
+        { key: 'measured', label: 'Measured diagonal (optional)', type: 'length', optional: true }
+      ],
+      compute: ({ a, b, measured }) => {
+        const diagonal = Math.hypot(toNum(a), toNum(b));
+        const rows = [['Decimal', `${diagonal.toFixed(3)} in`], ['Area', sqftText(toNum(a) * toNum(b))], ['Perimeter', inches(a.add(b).mul(F(2)))]];
+        let note = '';
+        if (measured) {
+          const off = toNum(measured) - diagonal;
+          rows.unshift(['Measured', inches(measured)]);
+          note = Math.abs(off) <= 1 / 16 ? 'Square (within 1/16").' : `Out of square by ${inchesOnly(fromNum(Math.abs(off)))}: the measured diagonal is too ${off > 0 ? 'long' : 'short'}.`;
+        }
+        return { main: [inches(fromNum(diagonal)), 'diagonal'], rows, note };
+      }
+    },
+    {
+      id: 'studs', title: 'Stud & joist layout', blurb: 'On-center marks and count for a wall or floor',
+      hint: 'Marks are centers measured from one end. For 1 1/2" lumber, mark 3/4" before each center and set the stud on the far side of the line. Outlined marks are where 4×8 sheet edges land.',
+      fields: [
+        { key: 'length', label: 'Wall or span length', type: 'length', placeholder: `14' 6"`, useResult: true },
+        { key: 'spacing', label: 'Spacing', type: 'choice', value: '16', options: [['16', '16" OC'], ['24', '24" OC'], ['12', '12" OC'], ['19.2', '19.2" OC']] }
+      ],
+      compute: ({ length, spacing }) => {
+        const spacingIn = Number(spacing), lengthIn = toNum(length);
+        const bays = Math.floor(lengthIn / spacingIn + 1e-9);
+        const centers = Array.from({ length: bays + 1 }, (_, i) => i * spacingIn);
+        const remainder = lengthIn - bays * spacingIn;
+        const endStud = remainder > 0.01;
+        const total = centers.length + (endStud ? 1 : 0);
+        const marks = centers.slice(0, 60).map(position => ({ text: inches(fromNum(position)), edge: position > 0 && Math.abs(position % 48) < 0.01 }));
+        if (endStud) marks.push({ text: `${inches(length)} end`, edge: false });
+        return { main: [String(total), `studs at ${spacing}" OC`], rows: [['Full bays', String(bays)], ['Last bay', endStud ? inches(fromNum(remainder)) : 'None, lands on the end'], ['4×8 sheets, one row', String(ceilNum(lengthIn / 48))]], marks };
+      }
+    },
+    {
+      id: 'tile', title: 'Tile & flooring', blurb: 'Tiles and boxes for a room, with waste',
+      hint: 'Waste covers cuts and breakage: 10% for a straight layout, 15% for diagonal or herringbone. Boxes need either tiles per box or sq ft per box from the label.',
+      fields: [
+        { key: 'roomW', label: 'Room width', type: 'length', placeholder: `10'`, useResult: true },
+        { key: 'roomL', label: 'Room length', type: 'length', placeholder: `12'` },
+        { key: 'tile', label: 'Tile or plank size', type: 'choice', value: '12x12', options: [['12x12', '12×12'], ['12x24', '12×24'], ['18x18', '18×18'], ['24x24', '24×24'], ['6x24', '6×24'], ['6x36', '6×36'], ['7x48', '7×48'], ['custom', 'Custom']] },
+        { key: 'tileW', label: 'Custom tile width', type: 'length', optional: true },
+        { key: 'tileL', label: 'Custom tile length', type: 'length', optional: true },
+        { key: 'waste', label: 'Waste %', type: 'number', value: '10', chips: ['5', '10', '15', '20'] },
+        { key: 'perBox', label: 'Tiles per box (optional)', type: 'count', optional: true },
+        { key: 'sqftBox', label: 'Sq ft per box (optional)', type: 'number', optional: true }
+      ],
+      compute: ({ roomW, roomL, tile, tileW, tileL, waste, perBox, sqftBox }) => {
+        let tw, tl;
+        if (tile === 'custom') { if (!tileW || !tileL) throw gentle('Enter the custom tile width and length.'); tw = toNum(tileW); tl = toNum(tileL); }
+        else [tw, tl] = tile.split('x').map(Number);
+        const area = toNum(roomW) * toNum(roomL), withWaste = area * (1 + waste / 100);
+        const tiles = ceilNum(withWaste / (tw * tl));
+        const rows = [['Floor area', sqftText(area)], ['With waste', sqftText(withWaste)], ['Tile', `${tw}" × ${tl}" · ${(tw * tl / 144).toFixed(2)} sq ft each`]];
+        if (perBox) rows.push(['Boxes', String(ceilNum(tiles / perBox))]);
+        else if (sqftBox) rows.push(['Boxes', String(ceilNum(withWaste / 144 / sqftBox))]);
+        return { main: [tiles.toLocaleString('en-US'), 'tiles'], rows };
+      }
+    },
+    {
+      id: 'paint', title: 'Paint', blurb: 'Gallons for walls or a ceiling',
+      hint: 'Add up the lengths of all the walls for the total. Doors count as 20 sq ft and windows as 15 sq ft. Coverage is on the can; 350 sq ft per gallon is typical. For a ceiling, enter its length as the wall length and its width as the height.',
+      fields: [
+        { key: 'perimeter', label: 'Total wall length (all walls)', type: 'length', placeholder: `44'`, useResult: true },
+        { key: 'height', label: 'Wall height', type: 'length', value: `8'`, chips: [`8'`, `9'`, `10'`] },
+        { key: 'doors', label: 'Doors', type: 'count', value: '1', optional: true },
+        { key: 'windows', label: 'Windows', type: 'count', value: '1', optional: true },
+        { key: 'coats', label: 'Coats', type: 'count', value: '2', chips: ['1', '2', '3'] },
+        { key: 'coverage', label: 'Coverage (sq ft per gallon)', type: 'number', value: '350', chips: ['300', '350', '400'] }
+      ],
+      compute: ({ perimeter, height, doors, windows, coats, coverage }) => {
+        const wall = toNum(perimeter) * toNum(height) / 144;
+        const area = Math.max(0, wall - (doors || 0) * 20 - (windows || 0) * 15);
+        const total = area * coats, gallons = total / coverage;
+        const quarts = ceilNum(gallons * 4);
+        const buy = gallons <= 1 ? `${quarts} quart${quarts === 1 ? '' : 's'}` : `${ceilNum(gallons)} gallons`;
+        return { main: [gallons.toFixed(1), 'gallons'], rows: [['Wall area', `${wall.toFixed(0)} sq ft`], ['Minus doors and windows', `${area.toFixed(0)} sq ft`], [`${coats} coat${coats === 1 ? '' : 's'}`, `${total.toFixed(0)} sq ft`], ['Buy', buy]] };
+      }
+    },
+    {
+      id: 'deck', title: 'Deck boards', blurb: 'Boards to buy for a deck surface',
+      hint: 'Width is measured across the boards. A 5/4×6 or 2×6 deck board is 5 1/2" wide, and most composite is 5 1/2" too. Waste covers end cuts and bad boards.',
+      fields: [
+        { key: 'width', label: 'Deck width (across the boards)', type: 'length', placeholder: `12'`, useResult: true },
+        { key: 'length', label: 'Deck length (along the boards)', type: 'length', placeholder: `16'` },
+        { key: 'boardW', label: 'Board width', type: 'length', value: '5 1/2"', chips: ['5 1/2"', '3 1/2"', '5 3/8"'] },
+        { key: 'gap', label: 'Gap between boards', type: 'length', value: '1/4"', chips: ['1/8"', '3/16"', '1/4"'], allowZero: true },
+        { key: 'boardLen', label: 'Board length to buy', type: 'length', value: `16'`, chips: [`8'`, `12'`, `16'`, `20'`] },
+        { key: 'waste', label: 'Waste %', type: 'number', value: '10', chips: ['5', '10', '15'] }
+      ],
+      compute: ({ width, length, boardW, gap, boardLen, waste }) => {
+        const rowsOfBoards = ceilNum((toNum(width) + toNum(gap)) / (toNum(boardW) + toNum(gap)));
+        const perRow = ceilNum(toNum(length) / toNum(boardLen));
+        const boards = ceilNum(rowsOfBoards * perRow * (1 + waste / 100));
+        const linear = rowsOfBoards * toNum(length) / 12;
+        return { main: [String(boards), `${inches(boardLen)} boards`], rows: [['Rows of boards', String(rowsOfBoards)], ['Boards per row', String(perRow)], ['Linear feet, no waste', `${linear.toFixed(0)} ft`], ['Deck area', sqftText(toNum(width) * toNum(length))]] };
+      }
+    },
+    {
+      id: 'fence', title: 'Fence', blurb: 'Posts, rails and pickets for a run of fence',
+      hint: 'Sections are the spans between posts. Pickets are for one side; double them for a board-on-board or shadowbox fence. Add gates separately.',
+      fields: [
+        { key: 'length', label: 'Fence length', type: 'length', placeholder: `120'`, useResult: true },
+        { key: 'postSpacing', label: 'Post spacing', type: 'length', value: `8'`, chips: [`6'`, `8'`] },
+        { key: 'rails', label: 'Rails per section', type: 'count', value: '2', chips: ['2', '3'] },
+        { key: 'picketW', label: 'Picket width', type: 'length', value: '5 1/2"', chips: ['3 1/2"', '5 1/2"'] },
+        { key: 'picketGap', label: 'Picket gap', type: 'length', value: '0', chips: ['0', '1/2"', '1"', '2 1/2"'], allowZero: true }
+      ],
+      compute: ({ length, postSpacing, rails, picketW, picketGap }) => {
+        const sections = ceilNum(toNum(length) / toNum(postSpacing));
+        const pickets = ceilNum(toNum(length) / (toNum(picketW) + toNum(picketGap)));
+        return { main: [String(sections + 1), 'posts'], rows: [['Sections', String(sections)], ['Rails', `${sections * rails} × ${inches(postSpacing)}`], ['Pickets', pickets.toLocaleString('en-US')], ['Concrete, 80 lb bags', `${sections + 1} to ${(sections + 1) * 2}`]] };
+      }
+    },
+    {
+      id: 'boardfeet', title: 'Board feet', blurb: 'Board feet and cost from nominal sizes',
+      hint: 'Board feet use nominal thickness and width, so a 2×4 counts as 2 × 4. Hardwood is often sold by the board foot; 4/4 means 1" thick.',
+      fields: [
+        { key: 'count', label: 'Number of boards', type: 'count', value: '1' },
+        { key: 'thick', label: 'Thickness (nominal, inches)', type: 'number', value: '2', chips: ['1', '2', '4'] },
+        { key: 'width', label: 'Width (nominal, inches)', type: 'number', value: '4', chips: ['4', '6', '8', '10', '12'] },
+        { key: 'length', label: 'Length', type: 'length', value: `8'`, chips: [`8'`, `10'`, `12'`, `16'`], useResult: true },
+        { key: 'price', label: 'Price per board foot (optional)', type: 'number', optional: true }
+      ],
+      compute: ({ count, thick, width, length, price }) => {
+        const perBoard = thick * width * (toNum(length) / 12) / 12;
+        const total = perBoard * count;
+        const rows = [['Per board', `${perBoard.toFixed(2)} bd ft`], ['Boards', String(count)]];
+        if (price) rows.push(['Cost', `$${(total * price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
+        return { main: [total.toLocaleString('en-US', { maximumFractionDigits: 2 }), 'board feet'], rows };
+      }
     }
-    cutResult.innerHTML = `
-      <div class="cut-main"><strong>${perBoard}</strong>${perBoard === 1n ? 'piece' : 'pieces'} per board</div>
-      <dl class="cut-details">${rows.map(([term, value]) => `<div><dt>${term}</dt><dd>${escapeHTMLForTag(value)}</dd></div>`).join('')}</dl>`;
+  ];
+
+  let activeTool = null;
+  const toolValues = tool => state.tools[tool.id] || (state.tools[tool.id] = {});
+  const shortLabel = field => field.label.replace(/\s*\(.*\)$/, '').toLowerCase();
+
+  function readToolValues(tool) {
+    const saved = toolValues(tool); const values = {};
+    for (const field of tool.fields) {
+      const raw = String(saved[field.key] ?? field.value ?? '').trim();
+      if (field.type === 'choice') { values[field.key] = raw || field.value; continue; }
+      if (!raw) {
+        if (field.optional || field.allowZero) { values[field.key] = field.allowZero ? F(0) : null; continue; }
+        throw gentle(`Enter the ${shortLabel(field)}.`);
+      }
+      if (field.type === 'length') values[field.key] = parseLengthField(raw, field.label, field.allowZero);
+      else if (field.type === 'count') {
+        if (!/^\d+$/.test(raw) || (Number(raw) === 0 && !field.optional)) throw new Error(`${field.label} must be a whole number.`);
+        values[field.key] = Number(raw);
+      } else {
+        const number = Number(raw.replace(/[$,%]/g, ''));
+        if (!Number.isFinite(number) || number < 0) throw new Error(`${field.label} must be a number.`);
+        values[field.key] = number;
+      }
+    }
+    return values;
   }
 
-  function openCutList() {
-    cutSheet.querySelectorAll('[data-fill-result]').forEach(button => { button.disabled = !hasLengthResult(); });
-    renderCutList();
-    showSheet(cutSheet, cutListButton);
+  function renderToolFields(tool) {
+    const saved = toolValues(tool);
+    toolFields.innerHTML = tool.fields.map(field => {
+      const value = saved[field.key] ?? field.value ?? '';
+      const id = `tool-${tool.id}-${field.key}`;
+      if (field.type === 'choice') {
+        return `<div class="cut-field"><label>${escapeHTMLForTag(field.label)}</label><div class="chips" data-field="${field.key}" data-choice>${field.options.map(([option, label]) =>
+          `<button type="button" data-fill="${escapeHTMLForTag(option)}" class="${option === value ? 'active' : ''}">${escapeHTMLForTag(label)}</button>`).join('')}</div></div>`;
+      }
+      const chips = [...(field.chips || []).map(chip => `<button type="button" data-fill="${escapeHTMLForTag(chip)}">${escapeHTMLForTag(chip)}</button>`), ...(field.useResult ? ['<button type="button" data-fill-result>Use result</button>'] : [])];
+      const mode = field.type === 'length' ? '' : ' inputmode="decimal"';
+      return `<div class="cut-field"><label for="${id}">${escapeHTMLForTag(field.label)}</label>` +
+        `<input id="${id}" data-field="${field.key}" type="text"${mode} autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="${escapeHTMLForTag(field.placeholder || '')}" value="${escapeHTMLForTag(value)}">` +
+        (chips.length ? `<div class="chips" data-field="${field.key}">${chips.join('')}</div>` : '') + '</div>';
+    }).join('');
+    toolFields.querySelectorAll('[data-fill-result]').forEach(button => { button.disabled = !hasLengthResult(); });
+  }
+
+  function renderTool() {
+    if (!activeTool) return;
+    let result;
+    try { result = activeTool.compute(readToolValues(activeTool)); }
+    catch (error) { toolResult.innerHTML = `<p class="cut-message${error.gentle ? '' : ' error'}">${escapeHTMLForTag(error.message)}</p>`; return; }
+    const [big, caption] = result.main;
+    toolResult.innerHTML = `<div class="cut-main"><strong>${escapeHTMLForTag(big)}</strong>${escapeHTMLForTag(caption)}</div>` +
+      `<dl class="cut-details">${result.rows.map(([term, value]) => `<div><dt>${escapeHTMLForTag(term)}</dt><dd>${escapeHTMLForTag(String(value))}</dd></div>`).join('')}</dl>` +
+      (result.marks ? `<div class="stud-marks">${result.marks.map(mark => `<span class="${mark.edge ? 'sheet-edge' : ''}">${escapeHTMLForTag(mark.text)}</span>`).join('')}</div>` : '') +
+      (result.note ? `<p class="cut-message" style="margin-top: 10px">${escapeHTMLForTag(result.note)}</p>` : '');
+  }
+
+  function openTool(tool) {
+    activeTool = tool;
+    toolTitle.textContent = tool.title;
+    toolHint.textContent = tool.hint || '';
+    renderToolFields(tool);
+    renderTool();
+    showSheet(toolSheet, toolsButton);
+  }
+
+  function renderToolList() {
+    toolList.innerHTML = TOOLS.map(tool => `<li><button type="button" class="tool-item" data-tool="${tool.id}"><strong>${escapeHTMLForTag(tool.title)}</strong><span>${escapeHTMLForTag(tool.blurb)}</span></button></li>`).join('');
+  }
+
+  // ---- Live preview ----------------------------------------------------------
+  // While typing, the line above the expression shows what = would give.
+  function renderPreview() {
+    resultEquation.classList.remove('preview');
+    let expression = state.evalInput.trim().replace(/[+\-×÷*/]\s*$/, '').trim();
+    if (!expression || /^-?\d+(?:\.\d*)?$/.test(expression)) return;
+    const open = (expression.match(/\(/g) || []).length - (expression.match(/\)/g) || []).length;
+    if (open > 0) expression += ')'.repeat(open);
+    const saved = [state.resultAsFeet, state.resultAsYards];
+    try {
+      const evaluated = evaluateNodeQuantity(buildTree(expression), state.mode === 'measure' ? 1 : 0);
+      if (evaluated.dimension < 0 || evaluated.dimension > 3) return;
+      state.resultAsFeet = state.mode === 'measure' && state.input.includes("'"); state.resultAsYards = false;
+      resultEquation.textContent = `= ${formatResult(evaluated.value, state.mode, evaluated.dimension)}`;
+      resultEquation.hidden = false;
+      resultEquation.classList.add('preview');
+    } catch (error) { /* incomplete expression: no preview */ }
+    [state.resultAsFeet, state.resultAsYards] = saved;
+  }
+
+  // ---- Settings, backup ------------------------------------------------------
+  function applySettings() {
+    const { theme, text } = state.settings;
+    if (theme === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = theme;
+    if (text === 'normal') delete document.documentElement.dataset.text; else document.documentElement.dataset.text = text;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) requestAnimationFrame(() => { meta.content = getComputedStyle(document.documentElement).getPropertyValue('--page').trim() || '#10110f'; });
+  }
+
+  function renderSettings() {
+    moreSheet.querySelectorAll('[data-setting]').forEach(group => {
+      const current = state.settings[group.dataset.setting];
+      group.querySelectorAll('button').forEach(button => button.classList.toggle('active', button.dataset.value === current));
+    });
+  }
+
+  // The backup is the saved state wrapped with a name and date. On iPhone the
+  // share sheet offers "Save to Files"; elsewhere it downloads.
+  async function saveBackup() {
+    saveState();
+    const json = JSON.stringify({ app: 'measure-calculator', version: 1, savedAt: new Date().toISOString(), data: JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') }, null, 2);
+    const name = `measure-calculator-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    const file = new File([json], name, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'Measure Calculator backup' }); backupStatus.textContent = 'Backup saved.'; return; }
+      catch (error) { if (error.name === 'AbortError') return; }
+    }
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a'); link.href = url; link.download = name;
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    backupStatus.textContent = `Saved ${name}`;
+  }
+
+  function restoreBackup(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        const data = parsed && parsed.app === 'measure-calculator' && parsed.data ? parsed.data : parsed;
+        if (!data || typeof data !== 'object' || !('scrapMemory' in data || 'history' in data || 'mode' in data)) throw new Error('not a backup');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        backupStatus.textContent = 'Restored. Reloading…';
+        setTimeout(() => location.reload(), 400);
+      } catch (error) { backupStatus.textContent = "That file isn't a Measure Calculator backup."; }
+    };
+    reader.readAsText(file);
+  }
+
+  // ---- Ask suggestions ----------------------------------------------------------
+  // With nothing typed, the example chips show; as you type, phrasings that
+  // match every typed word take their place.
+  function renderAskSuggestions() {
+    const query = askInput.value.trim().toLowerCase();
+    const { EXAMPLES, SUGGESTIONS } = window.AskEngine;
+    let list = EXAMPLES; let title = 'Try one';
+    if (query) {
+      const words = query.split(/\s+/);
+      list = SUGGESTIONS.filter(s => words.every(w => s.includes(w) || s.split(/[\s'"°%]+/).some(part => part.startsWith(w)))).slice(0, 8);
+      title = list.length ? 'Suggestions' : 'No matching examples';
+    }
+    askExamplesTitle.textContent = title;
+    askExamples.innerHTML = list.map(q => `<button type="button" data-question="${escapeHTMLForTag(q)}">${escapeHTMLForTag(q)}</button>`).join('');
   }
 
   async function copyText(text, successMessage = 'Copied') {
@@ -2987,6 +3502,7 @@ window.AskEngine = (() => {
     if (button.dataset.value !== undefined) addValue(button.dataset.value);
     else if (button.dataset.operator) addOperator(button.dataset.operator);
     else if (button.dataset.fraction) addFraction(button.dataset.fraction);
+    else if (button.dataset.unit) addMetricUnit(button.dataset.unit);
     else {
       switch (button.dataset.action) {
         case 'clear': clearAll(); break;
@@ -3072,15 +3588,40 @@ window.AskEngine = (() => {
     insertQuantity(entry);
   });
 
-  cutListButton.addEventListener('click', openCutList);
-  cutSheet.addEventListener('click', event => {
-    const chip = event.target.closest('.chips button');
-    if (!chip) return;
-    const field = cutFields[chip.parentElement.dataset.for];
-    field.value = chip.dataset.fill ?? (hasLengthResult() ? reusableResultText(state.currentResult) : '');
-    renderCutList(); saveState();
+  toolsButton.addEventListener('click', () => { renderToolList(); showSheet(toolsSheet, toolsButton); });
+  toolList.addEventListener('click', event => {
+    const button = event.target.closest('[data-tool]');
+    if (button) { vibrate(); openTool(TOOLS.find(tool => tool.id === button.dataset.tool)); }
   });
-  Object.values(cutFields).forEach(input => input.addEventListener('input', () => { renderCutList(); saveState(); }));
+  toolBack.addEventListener('click', () => { renderToolList(); showSheet(toolsSheet, toolsButton); });
+  toolFields.addEventListener('input', event => {
+    const input = event.target.closest('input[data-field]');
+    if (!input || !activeTool) return;
+    toolValues(activeTool)[input.dataset.field] = input.value;
+    renderTool(); saveState();
+  });
+  toolFields.addEventListener('click', event => {
+    const chip = event.target.closest('.chips button');
+    if (!chip || !activeTool) return;
+    const group = chip.parentElement; const key = group.dataset.field;
+    const value = chip.dataset.fill ?? (hasLengthResult() ? reusableResultText(state.currentResult) : '');
+    toolValues(activeTool)[key] = value;
+    const input = toolFields.querySelector(`input[data-field="${key}"]`);
+    if (input) input.value = value;
+    if (group.hasAttribute('data-choice')) group.querySelectorAll('button').forEach(button => button.classList.toggle('active', button === chip));
+    renderTool(); saveState();
+  });
+
+  moreButton.addEventListener('click', () => { renderSettings(); showSheet(moreSheet, moreButton); });
+  moreSheet.addEventListener('click', event => {
+    const chip = event.target.closest('[data-setting] button');
+    if (!chip) return;
+    state.settings[chip.parentElement.dataset.setting] = chip.dataset.value;
+    applySettings(); renderSettings(); saveState();
+  });
+  backupButton.addEventListener('click', saveBackup);
+  restoreButton.addEventListener('click', () => restoreFile.click());
+  restoreFile.addEventListener('change', () => { if (restoreFile.files[0]) restoreBackup(restoreFile.files[0]); restoreFile.value = ''; });
 
   document.querySelectorAll('.sheet').forEach(sheet => sheet.addEventListener('click', event => {
     if (event.target === sheet || event.target.closest('[data-close-sheet]')) closeSheet();
@@ -3091,6 +3632,7 @@ window.AskEngine = (() => {
     if (button) { vibrate(); switchMode(button.dataset.mode, { focusInput: true }); }
   });
   askForm.addEventListener('submit', event => { event.preventDefault(); askQuestion(askInput.value); });
+  askInput.addEventListener('input', renderAskSuggestions);
   askExamples.addEventListener('click', event => {
     const chip = event.target.closest('[data-question]');
     if (chip) { vibrate(); askQuestion(chip.dataset.question); }
@@ -3115,7 +3657,17 @@ window.AskEngine = (() => {
   fractionNext.addEventListener('click', () => scrollFractions(1));
   fractionPalette.addEventListener('scroll', updateFractionNavigation, { passive: true });
   window.addEventListener('resize', updateFractionNavigation);
-  display.addEventListener('click', () => copyText(display.textContent, 'Display copied'));
+  // Swipe across the display to backspace, like the iOS calculator; a plain tap still copies.
+  let swipeStart = null; let swiped = false;
+  display.addEventListener('pointerdown', event => { swipeStart = { x: event.clientX, y: event.clientY }; swiped = false; });
+  display.addEventListener('pointerup', event => {
+    if (!swipeStart) return;
+    const dx = event.clientX - swipeStart.x, dy = event.clientY - swipeStart.y;
+    swipeStart = null;
+    if (Math.abs(dx) > 40 && Math.abs(dy) < 50) { swiped = true; if (state.mode !== 'ask') backspace(); }
+  });
+  display.addEventListener('pointercancel', () => { swipeStart = null; });
+  display.addEventListener('click', () => { if (swiped) { swiped = false; return; } copyText(display.textContent, 'Display copied'); });
   conversionResults.addEventListener('click', event => {
     const value = event.target.closest('.conversion-item')?.querySelector('strong').textContent;
     if (value) copyText(value, 'Conversion copied');
@@ -3123,9 +3675,13 @@ window.AskEngine = (() => {
   document.addEventListener('keydown', handleKeyboard);
 
   loadState();
+  applySettings();
   renderAskExamples();
   renderAll();
-  if (state.mode === 'ask' && state.lastAsk) askQuestion(state.lastAsk.question, { record: false });
+  // Opened with ?ask=days+until+christmas (a Shortcut or Siri can do this): answer it straight away.
+  const askedInUrl = new URLSearchParams(location.search).get('ask') || new URLSearchParams(location.search).get('q');
+  if (askedInUrl) { switchMode('ask'); askQuestion(askedInUrl); }
+  else if (state.mode === 'ask' && state.lastAsk) askQuestion(state.lastAsk.question, { record: false });
 })();
 </script>
 </body>
