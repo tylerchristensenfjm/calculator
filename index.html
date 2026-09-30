@@ -122,7 +122,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 .display-wrap { grid-row: 3; }
 .memory-tools { grid-row: 4; }
 .fraction-browser { grid-row: 5; }
-.keypad, .ask-panel { grid-row: 6; }
+.keypad, .ask-panel { grid-row: 6; height: 100%; align-self: start; }
 
 .control-row {
   display: grid;
@@ -2001,7 +2001,7 @@ window.AskEngine = (() => {
   'use strict';
 
   const STORAGE_KEY = 'personalMeasureCalculatorV15';
-  const APP_VERSION = 'Sep 30, 2026 · build 3';   // shown in Settings → About; bump it with each upload
+  const APP_VERSION = 'Sep 30, 2026 · build 4';   // shown in Settings → About; bump it with each upload
 
   class Fraction {
     constructor(numerator, denominator = 1n) {
@@ -2640,7 +2640,21 @@ window.AskEngine = (() => {
     button?.classList.add('pending');
   }
 
-  function renderAll() { renderMode(); renderDisplay(); renderPendingOperator(); }
+  function renderAll() { renderMode(); renderDisplay(); renderPendingOperator(); fitKeypad(); }
+
+  // Safari does not reliably give the keypad the rest of the screen, so after
+  // each layout the visible panel is measured and given the remaining height
+  // in pixels. Rows sized as fractions then fill it on every engine.
+  function fitKeypad() {
+    requestAnimationFrame(() => {
+      const card = document.querySelector('.calculator-card');
+      const panel = [keypadStandard, keypadMeasure, askPanel].find(element => !element.hidden);
+      if (!card || !panel) return;
+      panel.style.height = '';
+      const available = card.getBoundingClientRect().bottom - panel.getBoundingClientRect().top;
+      if (available > 40 && Math.abs(panel.getBoundingClientRect().height - available) > 2) panel.style.height = `${Math.floor(available)}px`;
+    });
+  }
 
   function announce(message) {
     announcer.textContent = '';
@@ -3699,6 +3713,7 @@ window.AskEngine = (() => {
     state.displayError = false; state.resultAsFeet = false; state.resultAsYards = false; state.currentDimension = 0;
     renderAll(); saveState();
     if (mode === 'ask' && focusInput) askInput.focus();
+    setTimeout(fitKeypad, 50);   // once the mode's panel has laid out
   }
 
   function handleKeypadClick(event) {
@@ -3889,7 +3904,8 @@ window.AskEngine = (() => {
   fractionPrev.addEventListener('click', () => scrollFractions(-1));
   fractionNext.addEventListener('click', () => scrollFractions(1));
   fractionPalette.addEventListener('scroll', updateFractionNavigation, { passive: true });
-  window.addEventListener('resize', updateFractionNavigation);
+  window.addEventListener('resize', () => { updateFractionNavigation(); fitKeypad(); });
+  window.addEventListener('orientationchange', fitKeypad);
   // Swipe across the display to backspace, like the iOS calculator; a plain tap still copies.
   let swipeStart = null; let swiped = false;
   display.addEventListener('pointerdown', event => { swipeStart = { x: event.clientX, y: event.clientY }; swiped = false; });
