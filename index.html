@@ -870,12 +870,20 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   border: 0;
 }
 
-@media (max-width: 480px) {
+/* Phones, and any Home Screen web app: pin the app to the screen edges rather
+   than give it a height. iOS reports every viewport height (dvh, innerHeight)
+   short by the status-bar and home-indicator areas in a Home Screen app, so a
+   height taken from them leaves a band of page background at the bottom. */
+@media (max-width: 480px), (display-mode: standalone) {
   body { padding: 0; }
-  .calculator-app { width: 100%; height: var(--app-height, 100dvh); }
+  .calculator-app { position: fixed; inset: 0; height: auto; }
+  .control-row { padding-top: max(8px, env(safe-area-inset-top) + 6px); }
+  .keypad, .ask-panel { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 480px) {
+  .calculator-app { width: 100%; }
   .calculator-card { border: 0; border-radius: 0; box-shadow: none; }
-  .control-row { padding-top: max(8px, env(safe-area-inset-top)); }
-  .keypad { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
 }
 
 @media (max-height: 720px) {
@@ -907,12 +915,6 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 @media (max-width: 340px) {
   .conversion-item strong { font-size: 0.74rem; }
   .fraction-palette { grid-auto-columns: 44px; }
-}
-
-/* Without the script, a Home Screen app still gets the full screen: 100vh has
-   no toolbar to allow for there. */
-@media (display-mode: standalone) {
-  .calculator-app { height: var(--app-height, 100vh); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2009,7 +2011,7 @@ window.AskEngine = (() => {
   'use strict';
 
   const STORAGE_KEY = 'personalMeasureCalculatorV15';
-  const APP_VERSION = 'Sep 30, 2026 · build 5';   // shown in Settings → About; bump it with each upload
+  const APP_VERSION = 'Sep 30, 2026 · build 6';   // shown in Settings → About; bump it with each upload
 
   class Fraction {
     constructor(numerator, denominator = 1n) {
