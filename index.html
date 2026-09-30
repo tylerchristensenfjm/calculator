@@ -186,6 +186,8 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 .key:disabled { opacity: 0.45; cursor: default; }
 
 .measure-tools {
+  display: grid;
+  gap: 5px;
   flex: 0 0 auto;
   padding: 0 12px 8px;
 }
@@ -205,9 +207,12 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   letter-spacing: 0.03em;
 }
 
+.precision-control > span { min-width: 82px; }
+
 .precision-control > div {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 4px;
   flex: 1;
 }
@@ -406,6 +411,14 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 }
 
 .memory-tag:active { filter: brightness(0.8); }
+
+/* Lumber sizes (Measure) and recent results (Standard) fill the rest of the row. */
+.memory-tag.preset, .memory-tag.recent {
+  border-style: dashed;
+  background: transparent;
+  color: var(--accent-strong);
+}
+.memory-tag.recent { color: var(--muted); }
 
 .fraction-browser {
   display: grid;
@@ -853,8 +866,8 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 @media (max-height: 720px) {
   .control-row { padding-top: 6px; padding-bottom: 6px; }
   .control-button { min-height: 38px; }
-  .measure-tools { padding-bottom: 5px; }
-  .precision-control button { min-height: 28px; }
+  .measure-tools { gap: 4px; padding-bottom: 5px; }
+  .precision-control button { min-height: 26px; }
   .display-wrap {
     grid-template-rows: 15px 20px minmax(42px, 1fr) 46px;
     flex-basis: 145px;
@@ -912,12 +925,21 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     </div>
 
     <div class="measure-tools" id="measureTools" hidden>
-      <div class="precision-control" aria-label="Fraction increments and result rounding">
+      <div class="precision-control" aria-label="Fraction size">
         <span>Fraction size</span>
         <div id="precisionButtons">
           <button type="button" data-precision="8" aria-pressed="false" title="Use eighth-inch fractions">1/8</button>
           <button type="button" data-precision="16" class="active" aria-pressed="true" title="Use sixteenth-inch fractions">1/16</button>
           <button type="button" data-precision="32" aria-pressed="false" title="Use thirty-second-inch fractions">1/32</button>
+          <button type="button" data-precision="64" aria-pressed="false" title="Use sixty-fourth-inch fractions">1/64</button>
+        </div>
+      </div>
+      <div class="precision-control" aria-label="Rounding">
+        <span>Round</span>
+        <div id="roundButtons">
+          <button type="button" data-round="nearest" class="active" aria-pressed="true" title="Round to the nearest fraction">Nearest</button>
+          <button type="button" data-round="up" aria-pressed="false" title="Always round up to the next fraction">Up &#9650;</button>
+          <button type="button" data-round="down" aria-pressed="false" title="Always round down to the previous fraction">Down &#9660;</button>
         </div>
       </div>
     </div>
@@ -1054,6 +1076,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
     <div class="sheet-header">
       <button type="button" class="sheet-button" id="toolBack" aria-label="Back to the tool list">&lsaquo; Tools</button>
       <h2 id="toolTitle">Tool</h2>
+      <button type="button" class="sheet-button" id="toolShare" aria-label="Share this result">Share</button>
       <button type="button" class="sheet-button" data-close-sheet>Done</button>
     </div>
     <div class="sheet-body">
@@ -1100,7 +1123,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
       </div>
       <div class="setting">
         <label>About</label>
-        <p>Measure Calculator. Everything runs on this device; nothing is sent anywhere.</p>
+        <p>Measure Calculator · <span id="appVersion"></span><br>Everything runs on this device; nothing is sent anywhere. Once opened with a connection, it also works offline.</p>
       </div>
     </div>
   </div>
@@ -1965,6 +1988,7 @@ window.AskEngine = (() => {
   'use strict';
 
   const STORAGE_KEY = 'personalMeasureCalculatorV15';
+  const APP_VERSION = 'Sep 29, 2026 · build 2';   // shown in Settings → About; bump it with each upload
 
   class Fraction {
     constructor(numerator, denominator = 1n) {
@@ -2012,7 +2036,8 @@ window.AskEngine = (() => {
     resultAsYards: false,   // FT tapped again on an area or volume: show sq yd / cu yd
     lastAsk: null,          // { question, answer, detail, extras, value } shown in Ask mode
     tools: {},              // what was typed into each tool, by tool id
-    settings: { theme: 'auto', text: 'normal' }
+    settings: { theme: 'auto', text: 'normal' },
+    rounding: 'nearest'     // 'nearest' | 'up' | 'down' when showing fractions
   };
 
   const $ = id => document.getElementById(id);
@@ -2034,7 +2059,7 @@ window.AskEngine = (() => {
   const toolSheet = $('toolSheet'), toolTitle = $('toolTitle'), toolFields = $('toolFields'), toolResult = $('toolResult'), toolHint = $('toolHint'), toolBack = $('toolBack');
   const moreButton = $('moreButton'), moreSheet = $('moreSheet'), backupButton = $('backupButton'), restoreButton = $('restoreButton');
   const restoreFile = $('restoreFile'), backupStatus = $('backupStatus'), askExamplesTitle = $('askExamplesTitle');
-  const askClear = $('askClear'), askInputWrap = $('askInputWrap');
+  const askClear = $('askClear'), askInputWrap = $('askInputWrap'), toolShare = $('toolShare');
 
   const HISTORY_LIMIT = 50;
   let scrapMemory = [];   // [{ n, d, dim, label }] - the exact value plus the text shown for it
@@ -2321,13 +2346,19 @@ window.AskEngine = (() => {
     return match[1] + match[2].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (match[3] || '');
   }
 
-  function roundFractionToPrecision(fraction, precision) {
+  // Nearest 1/precision by default; the Round control can force the next
+  // fraction up or down instead (useful when a cut must not come up short).
+  function roundFractionToPrecision(fraction, precision, mode = state.rounding) {
     const denominator = BigInt(precision);
     const scaledNumerator = fraction.n * denominator;
-    const quotient = scaledNumerator / fraction.d;
+    let quotient = scaledNumerator / fraction.d;   // BigInt division truncates toward zero
     const remainder = Fraction.abs(scaledNumerator % fraction.d);
-    const rounded = remainder * 2n >= Fraction.abs(fraction.d) ? quotient + (scaledNumerator >= 0n ? 1n : -1n) : quotient;
-    return new Fraction(rounded, denominator);
+    if (remainder !== 0n) {
+      if (mode === 'up') { if (scaledNumerator > 0n) quotient += 1n; }
+      else if (mode === 'down') { if (scaledNumerator < 0n) quotient -= 1n; }
+      else if (remainder * 2n >= Fraction.abs(fraction.d)) quotient += scaledNumerator >= 0n ? 1n : -1n;
+    }
+    return new Fraction(quotient, denominator);
   }
 
   function formatMixedNumber(fraction, precision) {
@@ -2464,7 +2495,8 @@ window.AskEngine = (() => {
 
   function renderCalculatedResult(fraction) {
     const formatted = formatResult(fraction);
-    setDisplay(formatted, 'result');
+    const rounded = state.mode === 'measure' && state.currentDimension === 1 && state.rounding !== 'nearest';
+    setDisplay(formatted, 'result', rounded ? `Result · rounded ${state.rounding}` : '');
     resultEquation.textContent = state.lastEquation ? `${state.lastEquation} =` : '';
     resultEquation.hidden = !state.lastEquation;
     renderConversions(fraction);
@@ -2577,6 +2609,12 @@ window.AskEngine = (() => {
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', String(active));
     });
+    document.querySelectorAll('#roundButtons button').forEach(button => {
+      const active = button.dataset.round === state.rounding;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    updateMemoryDisplay();
     renderControlRow();
   }
 
@@ -2597,7 +2635,7 @@ window.AskEngine = (() => {
   }
 
   // action: optional { label, run } - shows a button (e.g. Undo) and keeps the toast up longer.
-  function showToast(message, action = null) {
+  function showToast(message, action = null, duration = action ? 4000 : 1500) {
     toastMessage.textContent = message;
     toastAction.hidden = !action;
     toastAction.textContent = action ? action.label : '';
@@ -2605,7 +2643,7 @@ window.AskEngine = (() => {
     toastElement.classList.toggle('actionable', Boolean(action));
     toastElement.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(hideToast, action ? 4000 : 1500);
+    toastTimer = setTimeout(hideToast, duration);
   }
 
   function hideToast() {
@@ -2639,12 +2677,29 @@ window.AskEngine = (() => {
     } catch (error) { return null; }
   }
 
+  // Actual sizes of 1x, 2x4, 2x6, 2x8, 2x10 and 2x12 stock.
+  const LUMBER_PRESETS = ['3/4"', '1 1/2"', '3 1/2"', '5 1/2"', '7 1/4"', '9 1/4"', '11 1/4"'];
+
+  // Saved scraps first; after them, lumber sizes in Measure mode or the last
+  // three results in Standard mode fill the rest of the row.
   function updateMemoryDisplay() {
-    memoryBank.innerHTML = scrapMemory.map((scrap, index) => `
-      <button type="button" class="memory-tag" data-memory-index="${index}" title="Tap to use, hold to delete">
-        ${escapeHTMLForTag(scrap.label)}
-      </button>
-    `).join('');
+    const tag = (cls, attr, value, title, text) => `<button type="button" class="memory-tag${cls}" ${attr}="${escapeHTMLForTag(value)}" title="${title}">${escapeHTMLForTag(text)}</button>`;
+    const scraps = scrapMemory.map((scrap, index) => tag('', 'data-memory-index', String(index), 'Tap to use, hold to delete', scrap.label));
+    let extras = [];
+    if (state.mode === 'measure') extras = LUMBER_PRESETS.map(text => tag(' preset', 'data-preset', text, 'Actual lumber size', text));
+    else if (state.mode === 'standard') {
+      const seen = new Set();
+      extras = calcHistory.filter(entry => !entry.ask && entry.dim === 0 && !seen.has(entry.label) && seen.add(entry.label)).slice(0, 3)
+        .map(entry => tag(' recent', 'data-recent', entry.label, 'Recent result', entry.label));
+    }
+    memoryBank.innerHTML = [...scraps, ...extras].join('');
+  }
+
+  function insertPreset(text) {
+    vibrate(); prepareForFreshValue();
+    const gap = /[\d.'")%]$/.test(state.input) ? ' ' : '';
+    state.input += gap + text; state.evalInput += gap + text;
+    renderDisplay(); renderPendingOperator(); saveState();
   }
 
   function addMemory() {
@@ -2706,7 +2761,7 @@ window.AskEngine = (() => {
         dimension: state.currentDimension, resultAsFeet: state.resultAsFeet, resultAsYards: state.resultAsYards, equation: state.lastEquation
       } : null;
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        mode: state.mode, precision: state.precision, lastCalculation, scrapMemory, history: calcHistory,
+        mode: state.mode, precision: state.precision, rounding: state.rounding, lastCalculation, scrapMemory, history: calcHistory,
         tools: state.tools, settings: state.settings, lastAsk: state.lastAsk ? state.lastAsk.question : null
       }));
     } catch (error) { console.warn('Calculator state could not be saved.', error); }
@@ -2721,7 +2776,8 @@ window.AskEngine = (() => {
       // Only the question is stored; the answer is worked out again on load so
       // "days until christmas" stays current.
       if (typeof parsed.lastAsk === 'string' && parsed.lastAsk) state.lastAsk = { question: parsed.lastAsk };
-      state.precision = [8, 16, 32].includes(parsed.precision) ? parsed.precision : 16;
+      state.precision = [8, 16, 32, 64].includes(parsed.precision) ? parsed.precision : 16;
+      if (['nearest', 'up', 'down'].includes(parsed.rounding)) state.rounding = parsed.rounding;
       if (Array.isArray(parsed.scrapMemory)) {
         scrapMemory = parsed.scrapMemory
           .map(scrap => typeof scrap === 'string' ? scrapFromLegacyText(scrap) : scrap)
@@ -2993,7 +3049,7 @@ window.AskEngine = (() => {
       state.evalInput = encodeQuantity(result, state.currentDimension);
       state.justCalculated = true; state.displayError = false;
       const formatted = renderCalculatedResult(result);
-      if (record) addHistoryEntry(expression, formatted, result);
+      if (record) { addHistoryEntry(expression, formatted, result); updateMemoryDisplay(); }
       renderPendingOperator(); saveState();
     } catch (error) {
       state.lastEquation = ''; state.displayError = true;
@@ -3131,14 +3187,18 @@ window.AskEngine = (() => {
   // typed into each tool is kept in state.tools so it is there next time.
   const F = n => new Fraction(BigInt(n));
   const toNum = fraction => fraction.toNumber();
-  // Back to a fraction (64ths are finer than any display precision) so a
-  // computed number can be shown as feet and inches.
-  const fromNum = value => new Fraction(BigInt(Math.round(value * 64)), 64n);
+  // Back to a fraction, exact to a millionth of an inch, so a computed number
+  // can be shown as feet and inches with only the display rounding applied.
+  const fromNum = value => {
+    const decimal = Fraction.fromDecimalText(Math.abs(value).toFixed(6));
+    return value < 0 ? decimal.neg() : decimal;
+  };
   const inches = fraction => formatFeetInches(fraction, state.precision);
   const inchesOnly = fraction => `${formatMixedNumber(fraction, state.precision)}"`;
   const ceilNum = value => Math.ceil(value - 1e-9);
   const sqftText = squareInches => `${(squareInches / 144).toLocaleString('en-US', { maximumFractionDigits: 1 })} sq ft`;
   const gentle = message => Object.assign(new Error(message), { gentle: true });
+  const deg = value => `${Number(value.toFixed(2))}°`;
 
   const TOOLS = [
     {
@@ -3350,6 +3410,70 @@ window.AskEngine = (() => {
         if (price) rows.push(['Cost', `$${(total * price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
         return { main: [total.toLocaleString('en-US', { maximumFractionDigits: 2 }), 'board feet'], rows };
       }
+    },
+    {
+      id: 'miter', title: 'Miter angles', blurb: 'Saw angle for frames, boxes and odd corners',
+      hint: 'For a regular shape, enter the number of sides. For one odd corner, enter its angle instead (a square corner is 90°). With an outside length and the material width you also get the inside, short-point length of each piece.',
+      fields: [
+        { key: 'sides', label: 'Number of sides', type: 'count', value: '4', chips: ['3', '4', '5', '6', '8'] },
+        { key: 'corner', label: 'Corner angle (optional, overrides sides)', type: 'number', optional: true, chips: ['90', '120', '135', '150'] },
+        { key: 'outside', label: 'Outside length of a side (optional)', type: 'length', optional: true, useResult: true },
+        { key: 'width', label: 'Material width (optional)', type: 'length', optional: true, chips: ['1 1/2"', '2 1/2"', '3 1/2"'] }
+      ],
+      compute: ({ sides, corner, outside, width }) => {
+        if (corner === null && sides < 3) throw new Error('A shape needs at least 3 sides.');
+        const cornerAngle = corner !== null ? corner : 180 - 360 / sides;
+        if (cornerAngle <= 0 || cornerAngle >= 180) throw new Error('Corner angle must be between 0° and 180°.');
+        const miter = (180 - cornerAngle) / 2;
+        const rows = [['Corner angle', deg(cornerAngle)], ['Miter, each piece', deg(miter)]];
+        if (corner === null) rows.push(['Pieces', String(sides)]);
+        if (outside && width) {
+          const inside = toNum(outside) - 2 * toNum(width) * Math.tan(miter * Math.PI / 180);
+          rows.push(['Inside length', inside > 0 ? inches(fromNum(inside)) : 'Material is too wide']);
+        }
+        if (outside && corner === null) rows.push(['Total material', inches(fromNum(toNum(outside) * sides))]);
+        return { main: [deg(miter), 'miter saw setting'], rows };
+      }
+    },
+    {
+      id: 'crown', title: 'Crown molding', blurb: 'Compound miter and bevel for crown cut flat',
+      hint: 'For a compound cut the crown lies flat on the saw. Spring angle is the angle between the molding and the wall: most crown is 38° (52/38) or 45°. Set the miter and bevel shown, mirror the miter for the other piece, and test on scrap. The nested cut instead stands the crown upside down against the fence at its spring angle and needs no bevel.',
+      fields: [
+        { key: 'spring', label: 'Spring angle', type: 'number', value: '38', chips: ['38', '45', '52'] },
+        { key: 'corner', label: 'Corner angle', type: 'number', value: '90', chips: ['90', '135', '45'] }
+      ],
+      compute: ({ spring, corner }) => {
+        if (spring <= 0 || spring >= 90) throw new Error('Spring angle must be between 0° and 90°.');
+        if (corner <= 0 || corner >= 180) throw new Error('Corner angle must be between 0° and 180°.');
+        const s = spring * Math.PI / 180, half = corner / 2 * Math.PI / 180;
+        const bevel = Math.asin(Math.cos(s) * Math.cos(half)) * 180 / Math.PI;
+        const miter = Math.atan(Math.sin(s) / Math.tan(half)) * 180 / Math.PI;
+        return { main: [`${deg(miter)} · ${deg(bevel)}`, 'miter · bevel'], rows: [['Miter setting', deg(miter)], ['Bevel setting', deg(bevel)], ['Nested cut, miter only', deg((180 - corner) / 2)], ['Corner', deg(corner)], ['Spring angle', deg(spring)]] };
+      }
+    },
+    {
+      id: 'slope', title: 'Slope & grade', blurb: 'Degrees, pitch, percent and ratio from any one of them',
+      hint: 'Enter whichever you have. Pitch is inches of rise per 12" of run (a 6/12 roof); percent is rise ÷ run × 100 (a 2% drain slope); ratio is 1 in n. A rise and run together also work, and a run with any of the others gives the rise over that run.',
+      fields: [
+        { key: 'degrees', label: 'Angle in degrees', type: 'number', optional: true, chips: ['1', '5', '10', '30', '45'] },
+        { key: 'pitch', label: 'Pitch (rise per 12")', type: 'number', optional: true, chips: ['3', '4', '6', '8', '12'] },
+        { key: 'percent', label: 'Percent grade', type: 'number', optional: true, chips: ['1', '2', '5', '8.33'] },
+        { key: 'rise', label: 'Rise (with run below)', type: 'length', optional: true, useResult: true },
+        { key: 'run', label: 'Run', type: 'length', optional: true }
+      ],
+      compute: ({ degrees, pitch, percent, rise, run }) => {
+        let ratio;   // rise per unit of run
+        if (degrees !== null) ratio = Math.tan(degrees * Math.PI / 180);
+        else if (pitch !== null) ratio = pitch / 12;
+        else if (percent !== null) ratio = percent / 100;
+        else if (rise && run) ratio = toNum(rise) / toNum(run);
+        else throw gentle('Enter an angle, a pitch, a percent, or a rise and run.');
+        if (!(ratio >= 0) || !Number.isFinite(ratio)) throw new Error('That slope is not valid.');
+        const angle = Math.atan(ratio) * 180 / Math.PI;
+        const rows = [['Angle', deg(angle)], ['Pitch', `${Number((ratio * 12).toFixed(2))} / 12`], ['Percent grade', `${Number((ratio * 100).toFixed(2))}%`], ['Ratio', ratio > 0 ? `1 in ${Number((1 / ratio).toFixed(1))}` : 'Level'], ['Rise per foot', inchesOnly(fromNum(ratio * 12))]];
+        if (run && (degrees !== null || pitch !== null || percent !== null)) rows.push(['Rise over that run', inches(fromNum(toNum(run) * ratio))]);
+        return { main: [deg(angle), 'slope'], rows };
+      }
     }
   ];
 
@@ -3401,7 +3525,12 @@ window.AskEngine = (() => {
     if (!activeTool) return;
     let result;
     try { result = activeTool.compute(readToolValues(activeTool)); }
-    catch (error) { toolResult.innerHTML = `<p class="cut-message${error.gentle ? '' : ' error'}">${escapeHTMLForTag(error.message)}</p>`; return; }
+    catch (error) {
+      lastToolResult = null; toolShare.disabled = true;
+      toolResult.innerHTML = `<p class="cut-message${error.gentle ? '' : ' error'}">${escapeHTMLForTag(error.message)}</p>`;
+      return;
+    }
+    lastToolResult = result; toolShare.disabled = false;
     const [big, caption] = result.main;
     toolResult.innerHTML = `<div class="cut-main"><strong>${escapeHTMLForTag(big)}</strong>${escapeHTMLForTag(caption)}</div>` +
       `<dl class="cut-details">${result.rows.map(([term, value]) => `<div><dt>${escapeHTMLForTag(term)}</dt><dd>${escapeHTMLForTag(String(value))}</dd></div>`).join('')}</dl>` +
@@ -3420,6 +3549,35 @@ window.AskEngine = (() => {
 
   function renderToolList() {
     toolList.innerHTML = TOOLS.map(tool => `<li><button type="button" class="tool-item" data-tool="${tool.id}"><strong>${escapeHTMLForTag(tool.title)}</strong><span>${escapeHTMLForTag(tool.blurb)}</span></button></li>`).join('');
+  }
+
+  // The open tool's inputs and result as plain text, for the share sheet or clipboard.
+  let lastToolResult = null;
+  function toolShareText() {
+    if (!activeTool || !lastToolResult) return '';
+    const saved = toolValues(activeTool);
+    const lines = [`${activeTool.title} · Measure Calculator`];
+    for (const field of activeTool.fields) {
+      const raw = String(saved[field.key] ?? field.value ?? '').trim();
+      if (!raw) continue;
+      const shown = field.type === 'choice' ? (field.options.find(([option]) => option === raw) || [raw, raw])[1] : raw;
+      lines.push(`${field.label.replace(/\s*\(.*\)$/, '')}: ${shown}`);
+    }
+    const { main, rows, marks, note } = lastToolResult;
+    lines.push('', `${main[0]} ${main[1]}`, ...rows.map(([term, value]) => `${term}: ${value}`));
+    if (marks) lines.push(`Marks: ${marks.map(mark => mark.text).join(', ')}`);
+    if (note) lines.push(note);
+    return lines.join('\n');
+  }
+
+  async function shareTool() {
+    const text = toolShareText();
+    if (!text) { showToast('Nothing to share yet'); return; }
+    if (navigator.share) {
+      try { await navigator.share({ title: `${activeTool.title} · Measure Calculator`, text }); return; }
+      catch (error) { if (error.name === 'AbortError') return; }
+    }
+    copyText(text, 'Copied to the clipboard');
   }
 
   // ---- Live preview ----------------------------------------------------------
@@ -3540,7 +3698,7 @@ window.AskEngine = (() => {
     else {
       switch (button.dataset.action) {
         case 'clear': clearAll(); break;
-        case 'backspace': backspace(); break;
+        case 'backspace': if (backspaceHeld) { backspaceHeld = false; break; } backspace(); break;
         case 'percent': addPercent(); break;
         case 'sign': toggleSign(); break;
         case 'equals': calculate(); break;
@@ -3558,6 +3716,7 @@ window.AskEngine = (() => {
     if (event.target.closest?.('button') && (event.key === 'Enter' || event.key === ' ')) return;
     if (/^[0-9]$/.test(event.key)) addValue(event.key);
     else if (event.key === '.') addValue('.');
+    else if (event.key === "'" || event.key === '"') { if (state.mode === 'measure') useUnit(event.key === "'" ? 'feet' : 'inches'); }
     else if (['+', '-', '*'].includes(event.key)) addOperator(event.key);
     else if (event.key === '/') {
       event.preventDefault();
@@ -3575,14 +3734,26 @@ window.AskEngine = (() => {
     if (event.target.closest('.keypad, #fractionPalette')) handleKeypadClick(event);
   });
   
+  const LONG_PRESS_MS = 550;
+
+  // Hold ⌫ to clear everything; the click that follows the hold is ignored.
+  let backspaceTimer = null; let backspaceHeld = false;
+  document.querySelectorAll('[data-action="backspace"]').forEach(button => {
+    button.addEventListener('pointerdown', () => {
+      backspaceHeld = false; clearTimeout(backspaceTimer);
+      backspaceTimer = setTimeout(() => { backspaceHeld = true; clearAll(); showToast('Cleared'); }, LONG_PRESS_MS);
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => button.addEventListener(type, () => clearTimeout(backspaceTimer)));
+    button.addEventListener('contextmenu', event => event.preventDefault());
+  });
+
   // Hold a scrap to delete it; a tap still recalls it. Moving the finger
   // (scrolling the scrap row) cancels the hold.
-  const LONG_PRESS_MS = 550;
   let pressTimer = null; let pressOrigin = null; let suppressScrapClick = false;
   const cancelPress = () => { clearTimeout(pressTimer); pressTimer = null; };
   memoryBank.addEventListener('pointerdown', event => {
     suppressScrapClick = false;
-    const tag = event.target.closest('.memory-tag');
+    const tag = event.target.closest('.memory-tag[data-memory-index]');
     if (!tag) return;
     cancelPress();
     pressOrigin = { x: event.clientX, y: event.clientY };
@@ -3602,6 +3773,11 @@ window.AskEngine = (() => {
     if (!button) return;
     if (button.dataset.action === 'memory-add') addMemory();
     else if (button.dataset.action === 'memory-clear') clearMemory();
+    else if (button.dataset.preset) insertPreset(button.dataset.preset);
+    else if (button.dataset.recent !== undefined) {
+      const entry = calcHistory.find(item => !item.ask && item.label === button.dataset.recent);
+      if (entry) insertQuantity(entry);
+    }
     else if (button.dataset.memoryIndex !== undefined) {
       if (suppressScrapClick) { suppressScrapClick = false; return; }
       useMemory(Number(button.dataset.memoryIndex));
@@ -3628,6 +3804,7 @@ window.AskEngine = (() => {
     if (button) { vibrate(); openTool(TOOLS.find(tool => tool.id === button.dataset.tool)); }
   });
   toolBack.addEventListener('click', () => { renderToolList(); showSheet(toolsSheet, toolsButton); });
+  toolShare.addEventListener('click', () => { vibrate(); shareTool(); });
   toolFields.addEventListener('input', event => {
     const input = event.target.closest('input[data-field]');
     if (!input || !activeTool) return;
@@ -3680,10 +3857,12 @@ window.AskEngine = (() => {
   feetButton.addEventListener('click', () => useUnit('feet'));
   inchesButton.addEventListener('click', () => useUnit('inches'));
 
-  $('precisionButtons').addEventListener('click', event => {
-    const button = event.target.closest('[data-precision]');
+  measureTools.addEventListener('click', event => {
+    const button = event.target.closest('[data-precision], [data-round]');
     if (!button) return;
-    state.precision = Number(button.dataset.precision);
+    vibrate();
+    if (button.dataset.precision) state.precision = Number(button.dataset.precision);
+    else state.rounding = button.dataset.round;
     renderMode();
     if (state.currentResult && state.justCalculated) {
       state.input = reusableResultText(state.currentResult);
@@ -3713,6 +3892,18 @@ window.AskEngine = (() => {
     if (value) copyText(value, 'Conversion copied');
   });
   document.addEventListener('keydown', handleKeyboard);
+
+  $('appVersion').textContent = `Version ${APP_VERSION}`;
+  // Offline copy plus an update notice, via sw.js. Only over http(s): the tests
+  // run from file:// and skip it.
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data && event.data.type === 'update-available') showToast('A newer version is ready', { label: 'Reload', run: () => location.reload() }, 20000);
+    });
+    // Once the worker is serving the page, ask it whether the live file is newer.
+    setTimeout(() => navigator.serviceWorker.controller?.postMessage({ type: 'check-version', version: APP_VERSION }), 1500);
+  }
 
   loadState();
   applySettings();
