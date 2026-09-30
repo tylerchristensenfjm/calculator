@@ -100,8 +100,12 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 }
 
 .calculator-card {
-  display: flex;
-  flex-direction: column;
+  /* A grid, not a flex column: Safari does not hand a grid keypad the leftover
+     height of a flex item, so its keys stayed small and the bottom of the
+     screen sat empty. Rows 1-5 size to their content; row 6 takes the rest. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto auto minmax(0, 1fr);
   height: 100%;
   min-height: 0;
   overflow: hidden;
@@ -110,6 +114,15 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
+
+/* Each block has a fixed row, so hidden blocks (a keypad for another mode, the
+   fraction row in Standard) leave their row empty instead of shifting the rest. */
+.control-row { grid-row: 1; }
+.measure-tools { grid-row: 2; }
+.display-wrap { grid-row: 3; }
+.memory-tools { grid-row: 4; }
+.fraction-browser { grid-row: 5; }
+.keypad, .ask-panel { grid-row: 6; }
 
 .control-row {
   display: grid;
@@ -1988,7 +2001,7 @@ window.AskEngine = (() => {
   'use strict';
 
   const STORAGE_KEY = 'personalMeasureCalculatorV15';
-  const APP_VERSION = 'Sep 29, 2026 · build 2';   // shown in Settings → About; bump it with each upload
+  const APP_VERSION = 'Sep 30, 2026 · build 3';   // shown in Settings → About; bump it with each upload
 
   class Fraction {
     constructor(numerator, denominator = 1n) {
@@ -3847,7 +3860,8 @@ window.AskEngine = (() => {
   askClear.addEventListener('click', () => {
     vibrate();
     askInput.value = '';
-    syncAskClear(); renderAskSuggestions();
+    state.lastAsk = null; state.displayError = false;   // the answer goes too
+    syncAskClear(); renderAskSuggestions(); renderDisplay(); saveState();
     askInput.focus();
   });
   askExamples.addEventListener('click', event => {
