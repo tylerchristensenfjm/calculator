@@ -819,6 +819,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 .setting > label { color: var(--muted); font-size: 0.7rem; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
 .setting .chips button.active { background: var(--accent); color: #17150f; border-color: var(--accent); }
 .setting p { margin: 0; font-size: 0.8rem; color: var(--muted); line-height: 1.45; }
+.setting p.layout-info { margin-top: 8px; font-size: 0.68rem; overflow-wrap: anywhere; }
 .setting-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .setting-actions .sheet-button { flex: 1 1 120px; min-height: 44px; }
 
@@ -884,6 +885,16 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 @media (max-width: 480px) {
   .calculator-app { width: 100%; }
   .calculator-card { border: 0; border-radius: 0; box-shadow: none; }
+}
+
+/* In an iOS Home Screen app the pinned box still stops short of the bottom
+   edge: iOS keeps a bottom inset that it does not report as a safe area. The
+   "large viewport" unit reaches the real edge. Used only in the app, never in
+   Safari, where it would run under the toolbar. */
+@media (display-mode: standalone) {
+  @supports (height: 100lvh) {
+    .calculator-app, .sheet { bottom: auto; height: 100lvh; }
+  }
 }
 
 @media (max-height: 720px) {
@@ -1147,6 +1158,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
       <div class="setting">
         <label>About</label>
         <p>Measure Calculator · <span id="appVersion"></span><br>Everything runs on this device; nothing is sent anywhere. Once opened with a connection, it also works offline.</p>
+        <p class="layout-info" id="layoutInfo"></p>
       </div>
     </div>
   </div>
@@ -2011,7 +2023,7 @@ window.AskEngine = (() => {
   'use strict';
 
   const STORAGE_KEY = 'personalMeasureCalculatorV15';
-  const APP_VERSION = 'Sep 30, 2026 · build 6';   // shown in Settings → About; bump it with each upload
+  const APP_VERSION = 'Sep 30, 2026 · build 7';   // shown in Settings → About; bump it with each upload
 
   class Fraction {
     constructor(numerator, denominator = 1n) {
@@ -3654,7 +3666,24 @@ window.AskEngine = (() => {
     if (meta) requestAnimationFrame(() => { meta.content = getComputedStyle(document.documentElement).getPropertyValue('--page').trim() || '#10110f'; });
   }
 
+  // What this device reports for the screen, shown under About. It is there so
+  // a layout problem on a phone can be read off a screenshot.
+  function layoutInfo() {
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;top:0;left:0;width:0;visibility:hidden;pointer-events:none';
+    document.body.appendChild(probe);
+    const px = value => { probe.style.height = value; return Math.round(probe.getBoundingClientRect().height); };
+    const app = document.querySelector('.calculator-app').getBoundingClientRect();
+    const os = (navigator.userAgent.match(/OS (\d+[_.]\d+)/) || [])[1] || '';
+    const info = `Screen ${screen.width}×${screen.height} · window ${window.innerWidth}×${window.innerHeight} · visual ${Math.round(window.visualViewport ? window.visualViewport.height : 0)} · doc ${document.documentElement.clientHeight}`
+      + ` · svh ${px('100svh')} · dvh ${px('100dvh')} · lvh ${px('100lvh')} · safe top ${px('env(safe-area-inset-top)')} bottom ${px('env(safe-area-inset-bottom)')}`
+      + ` · app ${Math.round(app.top)}→${Math.round(app.bottom)} · ${window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'}${os ? ` · iOS ${os.replace('_', '.')}` : ''}`;
+    probe.remove();
+    return info;
+  }
+
   function renderSettings() {
+    $('layoutInfo').textContent = layoutInfo();
     moreSheet.querySelectorAll('[data-setting]').forEach(group => {
       const current = state.settings[group.dataset.setting];
       group.querySelectorAll('button').forEach(button => button.classList.toggle('active', button.dataset.value === current));
