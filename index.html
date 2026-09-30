@@ -887,15 +887,10 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
   .calculator-card { border: 0; border-radius: 0; box-shadow: none; }
 }
 
-/* In an iOS Home Screen app the pinned box still stops short of the bottom
-   edge: iOS keeps a bottom inset that it does not report as a safe area. The
-   "large viewport" unit reaches the real edge. Used only in the app, never in
-   Safari, where it would run under the toolbar. */
-@media (display-mode: standalone) {
-  @supports (height: 100lvh) {
-    .calculator-app, .sheet { bottom: auto; height: 100lvh; }
-  }
-}
+/* The band some iOS 26 Home Screen installs show below the app is outside the
+   web view: content placed there is clipped, so it cannot be filled from CSS.
+   It comes from the manifest's display mode, which is why the manifest asks
+   for fullscreen. */
 
 @media (max-height: 720px) {
   .control-row { padding-top: 6px; padding-bottom: 6px; }
@@ -2023,7 +2018,7 @@ window.AskEngine = (() => {
   'use strict';
 
   const STORAGE_KEY = 'personalMeasureCalculatorV15';
-  const APP_VERSION = 'Sep 30, 2026 · build 7';   // shown in Settings → About; bump it with each upload
+  const APP_VERSION = 'Sep 30, 2026 · build 8';   // shown in Settings → About; bump it with each upload
 
   class Fraction {
     constructor(numerator, denominator = 1n) {

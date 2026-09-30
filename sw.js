@@ -1,11 +1,12 @@
 // Measure Calculator service worker. Keeps a copy of the app so it opens with
 // no signal, refreshes that copy in the background, and answers the page's
 // "is there a newer version?" question so it can offer a reload.
-const CACHE = 'measure-calc-v1';
-const APP_FILES = ['./', './index.html', './manifest.json', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './icon-32.png'];
+const CACHE = 'measure-calc-v2';
+const APP_FILES = ['./', './index.html', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './icon-32.png'];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_FILES)).then(() => self.skipWaiting()));
+  // cache: 'reload' skips the browser's own cache, so a fresh install gets the live files.
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_FILES.map(file => new Request(file, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {
@@ -46,7 +47,17 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Icons and the manifest: saved copy first, network if missing.
+  // The manifest decides how iOS installs the app, so it always comes from the
+  // network when there is one; the saved copy is only for offline.
+  if (url.pathname.endsWith('/manifest.json')) {
+    event.respondWith(fetch(new Request(event.request, { cache: 'no-cache' })).then(response => {
+      if (response.ok) caches.open(CACHE).then(cache => cache.put(event.request, response.clone()));
+      return response;
+    }).catch(() => caches.match(event.request)));
+    return;
+  }
+
+  // Icons: saved copy first, network if missing.
   event.respondWith(
     caches.match(event.request).then(hit => hit || fetch(event.request).then(response => {
       if (response.ok) caches.open(CACHE).then(cache => cache.put(event.request, response.clone()));
