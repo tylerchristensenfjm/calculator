@@ -95,7 +95,9 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 
 .calculator-app {
   width: min(100%, 460px);
-  height: calc(100dvh - max(12px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  /* --app-height is set from window.innerHeight by the script: in a Home
+     Screen web app iOS reports 100dvh short by Safari's toolbar height. */
+  height: calc(var(--app-height, 100dvh) - max(12px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
   margin: 0 auto;
 }
 
@@ -870,7 +872,7 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 
 @media (max-width: 480px) {
   body { padding: 0; }
-  .calculator-app { width: 100%; height: 100dvh; }
+  .calculator-app { width: 100%; height: var(--app-height, 100dvh); }
   .calculator-card { border: 0; border-radius: 0; box-shadow: none; }
   .control-row { padding-top: max(8px, env(safe-area-inset-top)); }
   .keypad { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
@@ -905,6 +907,12 @@ button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 
 @media (max-width: 340px) {
   .conversion-item strong { font-size: 0.74rem; }
   .fraction-palette { grid-auto-columns: 44px; }
+}
+
+/* Without the script, a Home Screen app still gets the full screen: 100vh has
+   no toolbar to allow for there. */
+@media (display-mode: standalone) {
+  .calculator-app { height: var(--app-height, 100vh); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2001,7 +2009,7 @@ window.AskEngine = (() => {
   'use strict';
 
   const STORAGE_KEY = 'personalMeasureCalculatorV15';
-  const APP_VERSION = 'Sep 30, 2026 · build 4';   // shown in Settings → About; bump it with each upload
+  const APP_VERSION = 'Sep 30, 2026 · build 5';   // shown in Settings → About; bump it with each upload
 
   class Fraction {
     constructor(numerator, denominator = 1n) {
@@ -2641,6 +2649,14 @@ window.AskEngine = (() => {
   }
 
   function renderAll() { renderMode(); renderDisplay(); renderPendingOperator(); fitKeypad(); }
+
+  // window.innerHeight is the height really on show, so the app is sized from
+  // it (see --app-height in the styles). Re-run on resize: rotation, the
+  // keyboard opening, Safari's toolbar collapsing.
+  function fitViewport() {
+    if (window.innerHeight > 0) document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+    fitKeypad();
+  }
 
   // Safari does not reliably give the keypad the rest of the screen, so after
   // each layout the visible panel is measured and given the remaining height
@@ -3904,8 +3920,9 @@ window.AskEngine = (() => {
   fractionPrev.addEventListener('click', () => scrollFractions(-1));
   fractionNext.addEventListener('click', () => scrollFractions(1));
   fractionPalette.addEventListener('scroll', updateFractionNavigation, { passive: true });
-  window.addEventListener('resize', () => { updateFractionNavigation(); fitKeypad(); });
-  window.addEventListener('orientationchange', fitKeypad);
+  window.addEventListener('resize', () => { updateFractionNavigation(); fitViewport(); });
+  window.addEventListener('orientationchange', () => setTimeout(fitViewport, 150));
+  window.addEventListener('pageshow', fitViewport);
   // Swipe across the display to backspace, like the iOS calculator; a plain tap still copies.
   let swipeStart = null; let swiped = false;
   display.addEventListener('pointerdown', event => { swipeStart = { x: event.clientX, y: event.clientY }; swiped = false; });
@@ -3938,6 +3955,7 @@ window.AskEngine = (() => {
   loadState();
   applySettings();
   renderAskExamples();
+  fitViewport();
   renderAll();
   // Opened with ?ask=days+until+christmas (a Shortcut or Siri can do this): answer it straight away.
   const askedInUrl = new URLSearchParams(location.search).get('ask') || new URLSearchParams(location.search).get('q');
