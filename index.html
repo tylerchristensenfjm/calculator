@@ -1220,7 +1220,7 @@ window.AskEngine = (() => {
   const shortDate = date => `${WEEKDAY_NAMES[date.getDay()].slice(0, 3)}, ${MONTH_NAMES[date.getMonth()].slice(0, 3)} ${date.getDate()}, ${date.getFullYear()}`;
   const plural = (n, word) => `${fmtNumber(n)} ${word}${Math.abs(n) === 1 ? '' : 's'}`;
 
-  function fmtNumber(value, maxDecimals = 4) {
+  function fmtNumber(value, maxDecimals = 2) {
     if (!Number.isFinite(value)) fail('That number is too large');
     const rounded = Math.abs(value) >= 1e15 ? value : Number(value.toPrecision(10));
     return rounded.toLocaleString('en-US', { maximumFractionDigits: maxDecimals });
@@ -1701,7 +1701,7 @@ window.AskEngine = (() => {
   }
 
   const unitLabel = (value, unit) => Math.abs(value) === 1 ? unit.singular : unit.plural;
-  const quantityText = (value, unit) => `${fmtNumber(value, unit.category === 'temperature' ? 1 : 4)} ${unitLabel(value, unit)}`;
+  const quantityText = (value, unit) => `${fmtNumber(value, unit.category === 'temperature' ? 1 : 2)} ${unitLabel(value, unit)}`;
   const parseNumber = text => Number(String(text).replace(/[,$]/g, ''));
 
   function conversionReply(value, from, to) {
@@ -1768,13 +1768,13 @@ window.AskEngine = (() => {
     const part = num(m[1] ?? m[3] ?? m[5] ?? m[7] ?? m[9]), whole = num(m[2] ?? m[4] ?? m[6] ?? m[8] ?? m[10]);
     if (whole === 0) fail("Can't divide by zero");
     const result = part / whole * 100;
-    return { answer: pct(result), detail: `${fmtNumber(part)} of ${fmtNumber(whole)}`, extras: [['Decimal', fmtNumber(part / whole, 4)], ['Remaining', pct(100 - result)]], value: result };
+    return { answer: pct(result), detail: `${fmtNumber(part)} of ${fmtNumber(whole)}`, extras: [['Decimal', fmtNumber(part / whole)], ['Remaining', pct(100 - result)]], value: result };
   });
   onMoney(new RegExp(`^(?:%\\s*(?:change|increase|decrease|difference|diff) (?:from|between|of) (${MONEY_RE}) (?:to|and) (${MONEY_RE})|(?:from )?(${MONEY_RE}) to (${MONEY_RE})\\s*%(?: change| increase| decrease| difference)?|(?:increase|decrease|change|growth) from (${MONEY_RE}) to (${MONEY_RE}))$`), m => {
     const a = num(m[1] ?? m[3] ?? m[5]), b = num(m[2] ?? m[4] ?? m[6]);
     if (a === 0) fail("Can't measure change from zero");
     const result = (b - a) / a * 100;
-    return { answer: `${result > 0 ? '+' : ''}${pct(result)}`, detail: `${fmtNumber(a)} → ${fmtNumber(b)}`, extras: [['Difference', fmtNumber(b - a)], ['Ratio', `${fmtNumber(b / a, 3)}×`]], value: result };
+    return { answer: `${result > 0 ? '+' : ''}${pct(result)}`, detail: `${fmtNumber(a)} → ${fmtNumber(b)}`, extras: [['Difference', fmtNumber(b - a)], ['Ratio', `${fmtNumber(b / a)}×`]], value: result };
   });
   onMoney(new RegExp(`^(?:(?:split|divide|share) (${MONEY_RE}) (?:(?:between|among|across|by|into|in|for) )?(${COUNT_RE})|(${MONEY_RE}) (?:split|divided|shared) (?:(?:between|among|across|by|into|in|for) )?(${COUNT_RE})|(${MONEY_RE}) (?:between|among|for) (${COUNT_RE}))(?: ways?| people| persons| friends| of us| guys| roommates| kids| families)?$`), m => {
     const total = num(m[1] ?? m[3] ?? m[5]), people = smallNumber(m[2] ?? m[4] ?? m[6]);
@@ -1794,7 +1794,7 @@ window.AskEngine = (() => {
     else if (m[4] !== undefined) { value = Math.cbrt(num(m[4])); detail = `∛${fmtNumber(num(m[4]))}`; }
     else if (m[5] !== undefined) { value = num(m[5]) ** num(m[6]); detail = `${fmtNumber(num(m[5]))}^${fmtNumber(num(m[6]))}`; }
     else { const n = num(m[7]); if (!Number.isInteger(n) || n < 0 || n > 170) fail('Factorial needs a whole number up to 170'); value = 1; for (let i = 2; i <= n; i += 1) value *= i; detail = `${n}!`; }
-    return { answer: fmtNumber(value, 6), detail, extras: [], value };
+    return { answer: fmtNumber(value), detail, extras: [], value };
   });
   onMoney(/^(average|avg|mean|sum|total|add up|max|maximum|min|minimum|median|range|count)(?: of)?:? ((?:-?[\d,]*\.?\d+)(?:(?:,|\s|and|\+)+-?[\d,]*\.?\d+)+)$/, m => {
     const raw = m[2].trim();
@@ -1839,7 +1839,7 @@ window.AskEngine = (() => {
       .replace(/[×·]/g, '*').replace(/÷/g, '/').replace(/[$,]/g, '').replace(/\s+/g, ' ').trim();
     if (!/^[\d\s+\-*/().%^]+$/.test(expr) || !/\d/.test(expr)) return null;
     const power = expr.match(/^(-?[\d.]+)\s*\^\s*(-?[\d.]+)$/);
-    if (power) { const value = Number(power[1]) ** Number(power[2]); return { answer: fmtNumber(value, 6), detail: `${power[1]}^${power[2]}`, extras: [], value }; }
+    if (power) { const value = Number(power[1]) ** Number(power[2]); return { answer: fmtNumber(value), detail: `${power[1]}^${power[2]}`, extras: [], value }; }
     if (expr.includes('^') || !helpers.math) return null;
     let result;
     try { result = helpers.math(expr); } catch (error) { return null; }
@@ -2018,7 +2018,7 @@ window.AskEngine = (() => {
   'use strict';
 
   const STORAGE_KEY = 'personalMeasureCalculatorV15';
-  const APP_VERSION = 'Sep 30, 2026 · build 8';   // shown in Settings → About; bump it with each upload
+  const APP_VERSION = 'Oct 13, 2026 · build 9';   // shown in Settings → About; bump it with each upload
 
   class Fraction {
     constructor(numerator, denominator = 1n) {
@@ -2361,13 +2361,24 @@ window.AskEngine = (() => {
     return parseExpression(tokens);
   }
 
+  // Decimals show at most two places. Rounding works on the exact fraction
+  // (half away from zero), so 1.005 shows as 1.01 rather than float's 1.00.
+  function roundedDecimalText(fraction, places = 2) {
+    const scale = 10n ** BigInt(places);
+    const scaled = fraction.n * scale;
+    let units = scaled / fraction.d;
+    if (Fraction.abs(scaled % fraction.d) * 2n >= fraction.d) units += scaled < 0n ? -1n : 1n;
+    const absolute = Fraction.abs(units);
+    const decimals = (absolute % scale).toString().padStart(places, '0').replace(/0+$/, '');
+    return `${units < 0n ? '-' : ''}${absolute / scale}${decimals ? `.${decimals}` : ''}`;
+  }
+
   function formatDecimal(fraction) {
     if (fraction.d === 1n) return fraction.n.toString();
     const value = fraction.toNumber();
     if (!Number.isFinite(value)) throw new Error('Result is too large');
-    const absolute = Math.abs(value);
-    if (absolute !== 0 && (absolute < 1e-9 || absolute >= 1e15)) return value.toExponential(10).replace(/\.0+e/, 'e').replace(/(\.\d*?)0+e/, '$1e');
-    return Number(value.toPrecision(12)).toString();
+    if (Math.abs(value) >= 1e15) return value.toExponential(10).replace(/\.0+e/, 'e').replace(/(\.\d*?)0+e/, '$1e');
+    return roundedDecimalText(fraction);
   }
 
   function formatWithCommas(text) {
@@ -2444,18 +2455,18 @@ window.AskEngine = (() => {
       const mm = fraction.mul(MM_PER_INCH);
       return Math.abs(mm.toNumber()) < 1000
         ? `${formatDecimalMeasurement(mm, 1)} mm`
-        : `${formatDecimalMeasurement(mm.div(new Fraction(1000n)), 3)} m`;
+        : `${formatDecimalMeasurement(mm.div(new Fraction(1000n)))} m`;
     }
     if (dimension === 2) {
       const cm2 = fraction.mul(CM2_PER_SQ_IN);
       return Math.abs(cm2.toNumber()) < 10000
         ? `${formatDecimalMeasurement(cm2, 1)} cm²`
-        : `${formatDecimalMeasurement(cm2.div(new Fraction(10000n)), 2)} m²`;
+        : `${formatDecimalMeasurement(cm2.div(new Fraction(10000n)))} m²`;
     }
     const liters = fraction.mul(LITERS_PER_CU_IN);
     return Math.abs(liters.toNumber()) < 1000
       ? `${formatDecimalMeasurement(liters, 1)} L`
-      : `${formatDecimalMeasurement(liters.div(new Fraction(1000n)), 3)} m³`;
+      : `${formatDecimalMeasurement(liters.div(new Fraction(1000n)))} m³`;
   }
 
   function formatResult(fraction, mode = state.mode, dimension = state.currentDimension) {
@@ -2467,11 +2478,9 @@ window.AskEngine = (() => {
     return state.resultAsFeet ? formatFeetInches(fraction, state.precision) : `${formatMixedNumber(fraction, state.precision)}"`;
   }
 
-  function formatDecimalMeasurement(fraction, places = 4) {
-    const value = fraction.toNumber();
-    if (!Number.isFinite(value)) throw new Error('Result is too large');
-    const rounded = Number(value.toFixed(places));
-    return formatWithCommas(String(Object.is(rounded, -0) ? 0 : rounded));
+  function formatDecimalMeasurement(fraction, places = 2) {
+    if (!Number.isFinite(fraction.toNumber())) throw new Error('Result is too large');
+    return formatWithCommas(roundedDecimalText(fraction, places));
   }
 
   function hideConversions() {
@@ -2492,7 +2501,7 @@ window.AskEngine = (() => {
       const sqIn = ['Sq in', `${decimal(fraction, 2)} sq in`];
       const sqFt = ['Sq ft', `${decimal(fraction.div(new Fraction(144n)), 2)} sq ft`];
       const sqYd = ['Sq yd', `${decimal(fraction.div(new Fraction(1296n)), 2)} sq yd`];
-      const acres = ['Acres', `${decimal(fraction.div(new Fraction(6272640n)), 3)} ac`];
+      const acres = ['Acres', `${decimal(fraction.div(new Fraction(6272640n)))} ac`];
       rows = !state.resultAsFeet ? [sqFt, sqYd] : state.resultAsYards ? [sqFt, acres] : [sqIn, sqYd];
     } else if (state.resultAsFeet && state.resultAsYards) {
       // Cubic yards is how concrete is ordered, so the row turns into ordering help.
@@ -3321,7 +3330,7 @@ window.AskEngine = (() => {
         const factor = Math.hypot(12, pitchValue) / 12;   // rafter length per unit of run
         const rafter = runIn * factor;
         const angle = Math.atan2(pitchValue, 12) * 180 / Math.PI;
-        const rows = [['Rise', inches(fromNum(riseIn))], ['Pitch', `${pitchValue.toLocaleString('en-US', { maximumFractionDigits: 2 })} / 12`], ['Roof angle', `${angle.toFixed(1)}°`], ['Plumb cut · seat cut', `${angle.toFixed(1)}° · ${(90 - angle).toFixed(1)}°`], ['Rafter per foot of run', `${(factor * 12).toFixed(3)}"`]];
+        const rows = [['Rise', inches(fromNum(riseIn))], ['Pitch', `${pitchValue.toLocaleString('en-US', { maximumFractionDigits: 2 })} / 12`], ['Roof angle', `${angle.toFixed(1)}°`], ['Plumb cut · seat cut', `${angle.toFixed(1)}° · ${(90 - angle).toFixed(1)}°`], ['Rafter per foot of run', `${(factor * 12).toFixed(2)}"`]];
         if (overhang) rows.push(['With overhang', inches(fromNum(rafter + toNum(overhang) * factor))], ['Overhang drop', inches(fromNum(toNum(overhang) * pitchValue / 12))]);
         return { main: [inches(fromNum(rafter)), 'rafter line length'], rows };
       }
@@ -3336,7 +3345,7 @@ window.AskEngine = (() => {
       ],
       compute: ({ a, b, measured }) => {
         const diagonal = Math.hypot(toNum(a), toNum(b));
-        const rows = [['Decimal', `${diagonal.toFixed(3)} in`], ['Area', sqftText(toNum(a) * toNum(b))], ['Perimeter', inches(a.add(b).mul(F(2)))]];
+        const rows = [['Decimal', `${diagonal.toFixed(2)} in`], ['Area', sqftText(toNum(a) * toNum(b))], ['Perimeter', inches(a.add(b).mul(F(2)))]];
         let note = '';
         if (measured) {
           const off = toNum(measured) - diagonal;
